@@ -169,6 +169,7 @@ extern char * parse_line(const char * text,
 		int nodraw);
 extern long getcolor(const char *colstr);		/* returns color of colstr */
 extern void setfont(const char *fontstr);		/* sets global font */
+void setextents(Fnt *font);				/* set font extents */
 extern unsigned int textw(const char *text);	/* returns width of text in px */
 extern void drawheader(const char *text);
 extern void drawbody(char *text);

@@ -113,10 +113,28 @@ getcolor(const char *colstr) {
 }
 
 void
+setextents(Fnt *font) {
+	int i, n;
+	XFontSetExtents *font_extents;
+	XFontStruct **xfonts;
+	char **font_names;
+	font->ascent = font->descent = 0;
+	font_extents = XExtentsOfFontSet(font->set);
+	n = XFontsOfFontSet(font->set, &xfonts, &font_names);
+	for(i = 0, font->ascent = 0, font->descent = 0; i < n; i++) {
+		if(font->ascent < (*xfonts)->ascent)
+		  font->ascent = (*xfonts)->ascent;
+		if(font->descent < (*xfonts)->descent)
+		  font->descent = (*xfonts)->descent;
+		xfonts++;
+	}
+}
+
+void
 setfont(const char *fontstr) {
 #ifndef DZEN_XFT
 	char *def, **missing;
-	int i, n;
+	int n;
 
 	missing = NULL;
 	if(dzen.font.set)
@@ -126,21 +144,9 @@ setfont(const char *fontstr) {
 	if(missing)
 		XFreeStringList(missing);
 
-	if(dzen.font.set) {
-		XFontSetExtents *font_extents;
-		XFontStruct **xfonts;
-		char **font_names;
-		dzen.font.ascent = dzen.font.descent = 0;
-		font_extents = XExtentsOfFontSet(dzen.font.set);
-		n = XFontsOfFontSet(dzen.font.set, &xfonts, &font_names);
-		for(i = 0, dzen.font.ascent = 0, dzen.font.descent = 0; i < n; i++) {
-			if(dzen.font.ascent < (*xfonts)->ascent)
-				dzen.font.ascent = (*xfonts)->ascent;
-			if(dzen.font.descent < (*xfonts)->descent)
-				dzen.font.descent = (*xfonts)->descent;
-			xfonts++;
-		}
-	}
+	if(dzen.font.set)
+		setextents(&(dzen.font));
+
 	else {
 		if(dzen.font.xfont)
 			XFreeFont(dzen.dpy, dzen.font.xfont);

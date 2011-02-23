@@ -822,7 +822,7 @@ event_loop(void) {
 static void
 x_preload(const char *fontstr, int p) {
 	char *def, **missing;
-	int i, n;
+	int n;
 
 	missing = NULL;
 
@@ -830,21 +830,9 @@ x_preload(const char *fontstr, int p) {
 	if(missing)
 		XFreeStringList(missing);
 
-	if(dzen.fnpl[p].set) {
-		XFontSetExtents *font_extents;
-		XFontStruct **xfonts;
-		char **font_names;
-		dzen.fnpl[p].ascent = dzen.fnpl[p].descent = 0;
-		font_extents = XExtentsOfFontSet(dzen.fnpl[p].set);
-		n = XFontsOfFontSet(dzen.fnpl[p].set, &xfonts, &font_names);
-		for(i = 0, dzen.fnpl[p].ascent = 0, dzen.fnpl[p].descent = 0; i < n; i++) {
-			if(dzen.fnpl[p].ascent < (*xfonts)->ascent)
-				dzen.fnpl[p].ascent = (*xfonts)->ascent;
-			if(dzen.fnpl[p].descent < (*xfonts)->descent)
-				dzen.fnpl[p].descent = (*xfonts)->descent;
-			xfonts++;
-		}
-	}
+	if(dzen.fnpl[p].set)
+		setextents(&(dzen.fnpl[p]));
+
 	else {
 		if(dzen.fnpl[p].xfont)
 			XFreeFont(dzen.dpy, dzen.fnpl[p].xfont);
