@@ -1,0 +1,5 @@
+action.o
+draw.o
+dzen2
+main.o
+util.o
