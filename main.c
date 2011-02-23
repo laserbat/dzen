@@ -908,15 +908,16 @@ main(int argc, char *argv[]) {
 	x_read_resources();
 
 	/* cmdline args */
-	for(i = 1; i < argc; i++)
-		if(!strncmp(argv[i], "-l", 3)){
-			if(++i < argc) {
-				dzen.slave_win.max_lines = atoi(argv[i]);
-				if(dzen.slave_win.max_lines)
-					init_input_buffer();
-			}
-		}
-		else if(!strncmp(argv[i], "-geometry", 10)) {
+	for(i = 1; i < argc; i++) {
+               if(!strncmp(argv[i], "-l", 3)){
+	              if(++i < argc) {
+		             dzen.slave_win.max_lines = atoi(argv[i]);
+			     if(dzen.slave_win.max_lines)
+			            init_input_buffer();
+		      }
+		      continue;
+	       }
+	       if(!strncmp(argv[i], "-geometry", 10)) {
 			if(++i < argc) {
 				int t;
 				int tx, ty;
@@ -937,12 +938,14 @@ main(int argc, char *argv[]) {
 				if(t & HeightValue)
 					dzen.line_height = (signed int) th;
 			}
-		}
-		else if(!strncmp(argv[i], "-u", 3)){
-			dzen.tsupdate = True;
-		}
-		else if(!strncmp(argv[i], "-expand", 8)){
-			if(++i < argc) {
+			continue;
+	       }
+	       if(!strncmp(argv[i], "-u", 3)){
+	              dzen.tsupdate = True;
+		      continue;
+	       }
+	       if(!strncmp(argv[i], "-expand", 8)){
+	              if(++i < argc) {
 				switch(argv[i][0]){
 					case 'l':
 						dzen.title_win.expand = left;
@@ -956,9 +959,10 @@ main(int argc, char *argv[]) {
 					default:
 						dzen.title_win.expand = noexpand;
 				}
-			}
-		}
-		else if(!strncmp(argv[i], "-p", 3)) {
+		      }
+		      continue;
+	       }
+	       if(!strncmp(argv[i], "-p", 3)) {
 			dzen.ispersistent = True;
 			if (i+1 < argc) {
 				dzen.timeout = strtoul(argv[i+1], &endptr, 10);
@@ -967,69 +971,75 @@ main(int argc, char *argv[]) {
 				else
 					i++;
 			}
-		}
-		else if(!strncmp(argv[i], "-ta", 4)) {
-			if(++i < argc) dzen.title_win.alignment = alignment_from_char(argv[i][0]);
-		}
-		else if(!strncmp(argv[i], "-sa", 4)) {
-			if(++i < argc) dzen.slave_win.alignment = alignment_from_char(argv[i][0]);
-		}
-		else if(!strncmp(argv[i], "-m", 3)) {
-			dzen.slave_win.ismenu = True;
-			if(i+1 < argc) {
+			continue;
+	       }
+	       if(!strncmp(argv[i], "-ta", 4)) {
+                       if(++i < argc) dzen.title_win.alignment = alignment_from_char(argv[i][0]);
+		       continue;
+	       }
+	       if(!strncmp(argv[i], "-sa", 4)) {
+                       if(++i < argc) dzen.slave_win.alignment = alignment_from_char(argv[i][0]);
+		       continue;
+	       }
+	       if(!strncmp(argv[i], "-m", 3)) {
+		       dzen.slave_win.ismenu = True;
+		       if(i+1 < argc) {
 				if( argv[i+1][0] == 'v') {
 					++i;
 					break;
 				}
 				dzen.slave_win.ishmenu = (argv[i+1][0] == 'h') ? ++i, True : False;
 			}
-		}
-		else if(!strncmp(argv[i], "-fn", 4)) {
-			if(++i < argc) dzen.fnt = argv[i];
-		}
-		else if(!strncmp(argv[i], "-e", 3)) {
-			if(++i < argc) action_string = argv[i];
-		}
-		else if(!strncmp(argv[i], "-title-name", 12)) {
-			if(++i < argc) dzen.title_win.name = argv[i];
-		}
-		else if(!strncmp(argv[i], "-slave-name", 12)) {
-			if(++i < argc) dzen.slave_win.name = argv[i];
-		}
-		else if(!strncmp(argv[i], "-bg", 4)) {
-			if(++i < argc) dzen.bg = argv[i];
-		}
-		else if(!strncmp(argv[i], "-fg", 4)) {
-			if(++i < argc) dzen.fg = argv[i];
-		}
-		else if(!strncmp(argv[i], "-x", 3)) {
-			if(++i < argc) dzen.title_win.x = dzen.slave_win.x = atoi(argv[i]);
-		}
-		else if(!strncmp(argv[i], "-y", 3)) {
-			if(++i < argc) dzen.title_win.y = atoi(argv[i]);
-		}
-		else if(!strncmp(argv[i], "-w", 3)) {
-			if(++i < argc) dzen.slave_win.width = atoi(argv[i]);
-		}
-		else if(!strncmp(argv[i], "-h", 3)) {
-			if(++i < argc) dzen.line_height= atoi(argv[i]);
-		}
-		else if(!strncmp(argv[i], "-tw", 4)) {
-			if(++i < argc) dzen.title_win.width = atoi(argv[i]);
-		}
-		else if(!strncmp(argv[i], "-fn-preload", 12)) {
-			if(++i < argc) {
-				fnpre = estrdup(argv[i]);
-			}
-		}
+	       }
+	       if(!strncmp(argv[i], "-fn", 4)) {
+                       if(++i < argc) dzen.fnt = argv[i]; continue;
+	       }
+	       if(!strncmp(argv[i], "-e", 3)) {
+                       if(++i < argc) action_string = argv[i]; continue;
+	       }
+	       if(!strncmp(argv[i], "-title-name", 12)) {
+                       if(++i < argc) dzen.title_win.name = argv[i]; continue;
+	       }
+	       if(!strncmp(argv[i], "-slave-name", 12)) {
+                       if(++i < argc) dzen.slave_win.name = argv[i]; continue;
+	       }
+	       if(!strncmp(argv[i], "-bg", 4)) {
+                       if(++i < argc) dzen.bg = argv[i]; continue;
+	       }
+	       if(!strncmp(argv[i], "-fg", 4)) {
+                       if(++i < argc) dzen.fg = argv[i]; continue;
+	       }
+	       if(!strncmp(argv[i], "-x", 3)) {
+                       if(++i < argc) dzen.title_win.x = dzen.slave_win.x = atoi(argv[i]); continue;
+	       }
+	       if(!strncmp(argv[i], "-y", 3)) {
+                       if(++i < argc) dzen.title_win.y = atoi(argv[i]); continue;
+	       }
+	       if(!strncmp(argv[i], "-w", 3)) {
+                       if(++i < argc) dzen.slave_win.width = atoi(argv[i]); continue;
+	       }
+	       if(!strncmp(argv[i], "-h", 3)) {
+                       if(++i < argc) dzen.line_height= atoi(argv[i]); continue;
+	       }
+	       if(!strncmp(argv[i], "-tw", 4)) {
+                       if(++i < argc) dzen.title_win.width = atoi(argv[i]); continue;
+	       }
+	       if(!strncmp(argv[i], "-fn-preload", 12)) {
+                       if(++i < argc) {
+			 fnpre = estrdup(argv[i]);
+		       }
+		       continue;
+	       }
+
 #ifdef DZEN_XINERAMA
-		else if(!strncmp(argv[i], "-xs", 4)) {
-			if(++i < argc) dzen.xinescreen = atoi(argv[i]);
-		}
+	      if(!strncmp(argv[i], "-xs", 4)) {
+		       if(++i < argc) dzen.xinescreen = atoi(argv[i]); continue;
+	      }
 #endif
-		else if(!strncmp(argv[i], "-dock", 6))
-			use_ewmh_dock = 1;
-		else if(!strncmp(argv[i], "-v", 3)) {
+	      if(!strncmp(argv[i], "-dock", 6)) {
+                       use_ewmh_dock = 1; continue;
+	      }
+	      if(!strncmp(argv[i], "-v", 3)) {
 			printf("dzen-"VERSION", (C)opyright 2007-2009 Robert Manea\n");
 			printf(
 			"Enabled optional features: "
@@ -1045,9 +1055,8 @@ main(int argc, char *argv[]) {
 			"\n"
 			);
 			return EXIT_SUCCESS;
-		}
-		else
-			eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
+	      }
+	      eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
                    "             [-x <pixel>] [-y <pixel>] [-w <pixel>] [-h <pixel>] [-tw <pixel>] [-u]\n"
 				   "             [-e <string>] [-l <lines>]  [-fn <font>] [-bg <color>] [-fg <color>]\n"
 				   "             [-geometry <geometry string>] [-expand <left|right>] [-dock]\n"
@@ -1056,7 +1065,7 @@ main(int argc, char *argv[]) {
 				   "             [-xs <screen>]\n"
 #endif
 				  );
-
+	}
 	if(dzen.tsupdate && !dzen.slave_win.max_lines)
 		dzen.tsupdate = False;
 
