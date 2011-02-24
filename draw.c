@@ -103,7 +103,7 @@ drawtext(const char *text, int reverse, int line, int align) {
 
 long
 getcolor(const char *colstr) {
-	Colormap cmap = DefaultColormap(dzen.dpy, dzen.screen);
+	Colormap cmap = DefaultColormapOfScreen(dzen.screen);
 	XColor color;
 
 	if(!XAllocNamedColor(dzen.dpy, cmap, colstr, &color, &color))
@@ -158,9 +158,9 @@ setfont(const char *fontstr) {
 	}
 	dzen.font.height = dzen.font.ascent + dzen.font.descent;
 #else
-	dzen.font.xftfont = XftFontOpenXlfd(dzen.dpy, dzen.screen, fontstr);
+	dzen.font.xftfont = XftFontOpenXlfd(dzen.dpy, DefaultScreen(dzen.dpy), fontstr);
 	if(!dzen.font.xftfont)
-	   dzen.font.xftfont = XftFontOpenName(dzen.dpy, dzen.screen, fontstr);
+	  dzen.font.xftfont = XftFontOpenName(dzen.dpy, DefaultScreen(dzen.dpy), fontstr);
 	if(!dzen.font.xftfont)
 	   eprint("error, cannot load font: '%s'\n", fontstr);
 	dzen.font.extents = malloc(sizeof(XGlyphInfo));
@@ -429,18 +429,18 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 
 
 		if(lnr != -1) {
-			pm = XCreatePixmap(dzen.dpy, RootWindow(dzen.dpy, DefaultScreen(dzen.dpy)), dzen.slave_win.width,
-					dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+      pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.slave_win.width,
+			 dzen.line_height, DefaultDepthOfScreen(dzen.screen));
 		}
 		else {
-			pm = XCreatePixmap(dzen.dpy, RootWindow(dzen.dpy, DefaultScreen(dzen.dpy)), dzen.title_win.width,
-					dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+      pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.title_win.width,
+			 dzen.line_height, DefaultDepthOfScreen(dzen.screen));
 			sens_areas_cnt = 0;
 		}
 
 #ifdef DZEN_XFT
-		xftd = XftDrawCreate(dzen.dpy, pm, DefaultVisual(dzen.dpy, dzen.screen), 
-				DefaultColormap(dzen.dpy, dzen.screen));
+		xftd = XftDrawCreate(dzen.dpy, pm, DefaultVisualOfScreen(dzen.screen),
+			 DefaultColormapOfScreen(dzen.screen));
 #endif
 
 		if(!reverse) {
@@ -472,9 +472,9 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 		xpms.name = NULL;
 		xpms.value = (char *)"none";
 
-		xpma.colormap = DefaultColormap(dzen.dpy, dzen.screen);
-		xpma.depth = DefaultDepth(dzen.dpy, dzen.screen);
-		xpma.visual = DefaultVisual(dzen.dpy, dzen.screen);
+		xpma.colormap = DefaultColormapOfScreen(dzen.screen);
+		xpma.depth = DefaultDepthOfScreen(dzen.screen);
+		xpma.visual = DefaultVisualOfScreen(dzen.screen);
 		xpma.colorsymbols = &xpms;
 		xpma.numsymbols = 1;
 		xpma.valuemask = XpmColormap|XpmDepth|XpmVisual|XpmColorSymbols;
@@ -806,11 +806,11 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 					XDrawString(dzen.dpy, pm, dzen.tgc, px, py+dzen.font.ascent, lbuf, strlen(lbuf));
 #else
 				if(reverse) {
-				XftColorAllocName(dzen.dpy, DefaultVisual(dzen.dpy, dzen.screen),
-						DefaultColormap(dzen.dpy, dzen.screen),  xftcs_bg,  &xftc);
+				  XftColorAllocName(dzen.dpy, DefaultVisualOfScreen(dzen.screen),
+						    DefaultColormapOfScreen(dzen.screen),  xftcs_bg,  &xftc);
 				} else {
-				XftColorAllocName(dzen.dpy, DefaultVisual(dzen.dpy, dzen.screen),
-						DefaultColormap(dzen.dpy, dzen.screen),  xftcs,  &xftc);
+				  XftColorAllocName(dzen.dpy, DefaultVisualOfScreen(dzen.screen),
+						    DefaultColormapOfScreen(dzen.screen),  xftcs,  &xftc);
 				}
 
 				XftDrawStringUtf8(xftd, &xftc, 

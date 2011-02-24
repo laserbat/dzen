@@ -542,7 +542,7 @@ a_scrollend(char * opt[]) {
 int
 a_grabkeys(char * opt[]) {
 	(void)opt;
-	XGrabKeyboard(dzen.dpy, RootWindow(dzen.dpy, dzen.screen),
+	XGrabKeyboard(dzen.dpy, RootWindowOfScreen(dzen.screen),
 			True, GrabModeAsync, GrabModeAsync, CurrentTime);
 	return 0;
 }
@@ -557,7 +557,7 @@ a_ungrabkeys(char * opt[]) {
 int
 a_grabmouse(char * opt[]) {
 	(void)opt;
-	XGrabPointer(dzen.dpy, RootWindow(dzen.dpy, dzen.screen),
+	XGrabPointer(dzen.dpy, RootWindowOfScreen(dzen.screen),
 			True, ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
 	return 0;
 }

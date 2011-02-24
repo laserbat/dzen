@@ -266,8 +266,8 @@ static void
 qsi_no_xinerama(Display *dpy, XRectangle *rect) {
 	rect->x = 0;
 	rect->y = 0;
-	rect->width  = DisplayWidth( dpy, DefaultScreen(dpy));
-	rect->height = DisplayHeight(dpy, DefaultScreen(dpy));
+	rect->width  = WidthOfScreen(dzen.screen);
+	rect->height = HeightOfScreen(dzen.screen);
 }
 
 #ifdef DZEN_XINERAMA
@@ -446,15 +446,15 @@ x_create_gcs(void) {
 	gcv.graphics_exposures = 0;
 
 	/* normal GC */
-	dzen.gc  = XCreateGC(dzen.dpy, RootWindow(dzen.dpy, dzen.screen), GCGraphicsExposures, &gcv);
+	dzen.gc  = XCreateGC(dzen.dpy, RootWindowOfScreen(dzen.screen), GCGraphicsExposures, &gcv);
 	XSetForeground(dzen.dpy, dzen.gc, dzen.norm[ColFG]);
 	XSetBackground(dzen.dpy, dzen.gc, dzen.norm[ColBG]);
 	/* reverse color GC */
-	dzen.rgc = XCreateGC(dzen.dpy, RootWindow(dzen.dpy, dzen.screen), GCGraphicsExposures, &gcv);
+	dzen.rgc = XCreateGC(dzen.dpy, RootWindowOfScreen(dzen.screen), GCGraphicsExposures, &gcv);
 	XSetForeground(dzen.dpy, dzen.rgc, dzen.norm[ColBG]);
 	XSetBackground(dzen.dpy, dzen.rgc, dzen.norm[ColFG]);
 	/* temporary GC */
-	dzen.tgc = XCreateGC(dzen.dpy, RootWindow(dzen.dpy, dzen.screen), GCGraphicsExposures, &gcv);
+	dzen.tgc = XCreateGC(dzen.dpy, RootWindowOfScreen(dzen.screen), GCGraphicsExposures, &gcv);
 }
 
 static void
@@ -462,7 +462,7 @@ x_connect(void) {
 	dzen.dpy = XOpenDisplay(0);
 	if(!dzen.dpy)
 		eprint("dzen: cannot open display\n");
-	dzen.screen = DefaultScreen(dzen.dpy);
+	dzen.screen = DefaultScreenOfDisplay(dzen.dpy);
 }
 
 /* Read display styles from X resources. */
@@ -499,7 +499,7 @@ x_create_windows(int use_ewmh_dock) {
 	XRectangle si;
 	XClassHint *class_hint;
 
-	root = RootWindow(dzen.dpy, dzen.screen);
+	root = RootWindowOfScreen(dzen.screen);
 
 	/* style */
 	if((dzen.norm[ColBG] = getcolor(dzen.bg)) == ~0lu)
@@ -525,8 +525,8 @@ x_create_windows(int use_ewmh_dock) {
 	/* title window */
 	dzen.title_win.win = XCreateWindow(dzen.dpy, root,
 			dzen.title_win.x, dzen.title_win.y, dzen.title_win.width, dzen.line_height, 0,
-			DefaultDepth(dzen.dpy, dzen.screen), CopyFromParent,
-			DefaultVisual(dzen.dpy, dzen.screen),
+					   DefaultDepthOfScreen(dzen.screen), CopyFromParent,
+					   DefaultVisualOfScreen(dzen.screen),
 			CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 	/* set class property */
 	class_hint = XAllocClassHint();
@@ -539,7 +539,7 @@ x_create_windows(int use_ewmh_dock) {
 	XStoreName(dzen.dpy, dzen.title_win.win, dzen.title_win.name);
 
 	dzen.title_win.drawable = XCreatePixmap(dzen.dpy, root, dzen.title_win.width,
-			dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+						dzen.line_height, DefaultDepthOfScreen(dzen.screen));
 	XFillRectangle(dzen.dpy, dzen.title_win.drawable, dzen.rgc, 0, 0, dzen.title_win.width, dzen.line_height);
 
 	/* set some hints for windowmanagers*/
@@ -567,14 +567,14 @@ x_create_windows(int use_ewmh_dock) {
 
 			dzen.slave_win.win = XCreateWindow(dzen.dpy, root,
 					dzen.slave_win.x, dzen.slave_win.y, dzen.slave_win.width, dzen.line_height, 0,
-					DefaultDepth(dzen.dpy, dzen.screen), CopyFromParent,
-					DefaultVisual(dzen.dpy, dzen.screen),
+							   DefaultDepthOfScreen(dzen.screen), CopyFromParent,
+							   DefaultVisualOfScreen(dzen.screen),
 					CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 			XStoreName(dzen.dpy, dzen.slave_win.win, dzen.slave_win.name);
 
 			for(i=0; i < dzen.slave_win.max_lines; i++) {
 				dzen.slave_win.drawable[i] = XCreatePixmap(dzen.dpy, root, ew+r,
-						dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+									   dzen.line_height, DefaultDepthOfScreen(dzen.screen));
 			XFillRectangle(dzen.dpy, dzen.slave_win.drawable[i], dzen.rgc, 0, 0,
 					ew+r, dzen.line_height);
 			}
@@ -584,8 +584,8 @@ x_create_windows(int use_ewmh_dock) {
 			for(i=0; i < dzen.slave_win.max_lines; i++)
 				dzen.slave_win.line[i] = XCreateWindow(dzen.dpy, dzen.slave_win.win,
 						i*ew, 0, (i == dzen.slave_win.max_lines-1) ? ew+r : ew, dzen.line_height, 0,
-						DefaultDepth(dzen.dpy, dzen.screen), CopyFromParent,
-						DefaultVisual(dzen.dpy, dzen.screen),
+								       DefaultDepthOfScreen(dzen.screen), CopyFromParent,
+								       DefaultVisualOfScreen(dzen.screen),
 						CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 			/* As we don't use the title window in this mode,
@@ -605,14 +605,14 @@ x_create_windows(int use_ewmh_dock) {
 
 			dzen.slave_win.win = XCreateWindow(dzen.dpy, root,
 					dzen.slave_win.x, dzen.slave_win.y, dzen.slave_win.width, dzen.slave_win.max_lines * dzen.line_height, 0,
-					DefaultDepth(dzen.dpy, dzen.screen), CopyFromParent,
-					DefaultVisual(dzen.dpy, dzen.screen),
+							   DefaultDepthOfScreen(dzen.screen), CopyFromParent,
+							   DefaultVisualOfScreen(dzen.screen),
 					CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 			XStoreName(dzen.dpy, dzen.slave_win.win, dzen.slave_win.name);
 
 			for(i=0; i < dzen.slave_win.max_lines; i++) {
 				dzen.slave_win.drawable[i] = XCreatePixmap(dzen.dpy, root, dzen.slave_win.width,
-						dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+									   dzen.line_height, DefaultDepthOfScreen(dzen.screen));
 				XFillRectangle(dzen.dpy, dzen.slave_win.drawable[i], dzen.rgc, 0, 0,
 						dzen.slave_win.width, dzen.line_height);
 			}
@@ -621,8 +621,8 @@ x_create_windows(int use_ewmh_dock) {
 			for(i=0; i < dzen.slave_win.max_lines; i++)
 				dzen.slave_win.line[i] = XCreateWindow(dzen.dpy, dzen.slave_win.win,
 						0, i*dzen.line_height, dzen.slave_win.width, dzen.line_height, 0,
-						DefaultDepth(dzen.dpy, dzen.screen), CopyFromParent,
-						DefaultVisual(dzen.dpy, dzen.screen),
+								       DefaultDepthOfScreen(dzen.screen), CopyFromParent,
+								       DefaultVisualOfScreen(dzen.screen),
 						CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 		}
 	}

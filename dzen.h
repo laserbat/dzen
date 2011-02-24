@@ -133,7 +133,7 @@ struct DZEN {
 	int line_height;
 
 	Display *dpy;
-	int screen;
+	Screen *screen;
 	unsigned int depth;
 
 	Visual *visual;
