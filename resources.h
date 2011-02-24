@@ -29,7 +29,7 @@ static String fallbackResources[] = {
 
   "*lines: 0",
   "*update: False",
-  
+
   "*persistent: False",
   "*timeout: 0",
 
