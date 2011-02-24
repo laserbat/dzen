@@ -24,7 +24,6 @@ ${OBJ}: dzen.h action.h config.mk
 dzen2: ${OBJ}
 	@echo LD $@
 	@${LD} -o $@ ${OBJ} ${LDFLAGS}
-	@strip $@
 	@echo "Run ./help for documentation"
 
 clean:
@@ -44,6 +43,7 @@ dist: clean
 	@rm -rf dzen2-${VERSION}
 
 install: all
+	@strip $@
 	@echo installing executable file to ${DESTDIR}${PREFIX}/bin
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
 	@cp -f dzen2 ${DESTDIR}${PREFIX}/bin
