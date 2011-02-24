@@ -6,6 +6,7 @@
 
 #include "dzen.h"
 #include "action.h"
+#include "resources.h"
 
 #include <ctype.h>
 #include <locale.h>

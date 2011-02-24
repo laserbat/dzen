@@ -19,7 +19,7 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: dzen.h action.h config.mk
+${OBJ}: dzen.h action.h resources.h config.mk
 
 dzen2: ${OBJ}
 	@echo LD $@
