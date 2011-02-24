@@ -877,6 +877,26 @@ init_input_buffer(void) {
 	dzen.slave_win.tbuf = emalloc(dzen.slave_win.tsize * sizeof(char *));
 }
 
+void parse_geo(char *geo) {
+  int t, tx, ty;
+  unsigned int tw, th;
+
+  t = XParseGeometry(geo, &tx, &ty, &tw, &th);
+
+  if(t & XValue)
+    dzen.title_win.x = tx;
+  if(t & YValue) {
+    dzen.title_win.y = ty;
+    if(!ty && (t & YNegative))
+      /* -0 != +0 */
+      dzen.title_win.y = -1;
+  }
+  if(t & WidthValue)
+    dzen.title_win.width = (signed int) tw;
+  if(t & HeightValue)
+    dzen.line_height = (signed int) th;
+}
+
 int
 main(int argc, char *argv[]) {
 	int i, use_ewmh_dock=0;
@@ -918,26 +938,8 @@ main(int argc, char *argv[]) {
 		      continue;
 	       }
 	       if(!strncmp(argv[i], "-geometry", 10)) {
-			if(++i < argc) {
-				int t;
-				int tx, ty;
-				unsigned int tw, th;
-
-				t = XParseGeometry(argv[i], &tx, &ty, &tw, &th);
-
-				if(t & XValue)
-					dzen.title_win.x = tx;
-				if(t & YValue) {
-					dzen.title_win.y = ty;
-					if(!ty && (t & YNegative))
-						/* -0 != +0 */
-						dzen.title_win.y = -1;
-				}
-				if(t & WidthValue)
-					dzen.title_win.width = (signed int) tw;
-				if(t & HeightValue)
-					dzen.line_height = (signed int) th;
-			}
+	    if(++i < argc)
+	      parse_geo(argv[i]);
 			continue;
 	       }
 	       if(!strncmp(argv[i], "-u", 3)){
