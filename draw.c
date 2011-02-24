@@ -103,7 +103,6 @@ drawtext(const char *text, int reverse, int line, int align) {
 
 long
 getcolor(const char *colstr) {
-	Colormap cmap = DefaultColormapOfScreen(dzen.screen);
 	XColor color;
 
 	if(!XAllocNamedColor(dzen.dpy, cmap, colstr, &color, &color))

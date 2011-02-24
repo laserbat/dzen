@@ -73,7 +73,7 @@ typedef struct _CLICK_A {
 extern click_a sens_areas[MAX_CLICKABLE_AREAS];
 extern int sens_areas_cnt;
 extern int xorig;
-
+extern Colormap cmap;
 
 /* title window */
 struct TW {

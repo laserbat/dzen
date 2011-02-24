@@ -29,6 +29,7 @@ static int last_cnt = 0;
 typedef void sigfunc(int);
 click_a sens_areas[MAX_CLICKABLE_AREAS];
 int sens_areas_cnt=0;
+Colormap cmap;
 
 
 static void
@@ -1122,6 +1123,9 @@ main(int argc, char *argv[]) {
 			!dzen.slave_win.max_lines)
 		dzen.slave_win.max_lines = 1;
 
+	// x_create_windows below will use getcolor
+	// which needs cmap to be set
+	cmap = DefaultColormapOfScreen(dzen.screen);
 
 	x_create_windows(use_ewmh_dock);
 
