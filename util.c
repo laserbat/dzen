@@ -64,3 +64,11 @@ spawn(const char *arg) {
 	wait(0);
 }
 
+// convert XColor to XftColor
+void
+XColorToXRenderColor(XColor xcol, XRenderColor *rendcol) {
+  rendcol->red = xcol.red;
+  rendcol->green = xcol.green;
+  rendcol->blue = xcol.blue;
+  rendcol->alpha = 0xFFFF;
+}

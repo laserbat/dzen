@@ -481,10 +481,10 @@ x_read_resources(void) {
 		if( XrmGetResource(xdb, "dzen2.font", "*", datatype, &xvalue) == True )
 			dzen.fnt = estrdup(xvalue.addr);
 		if( XrmGetResource(xdb, "dzen2.foreground", "*", datatype, &xvalue) == True )
-			dzen.fg  = estrdup(xvalue.addr);
+                        XParseColor(dzen.dpy, cmap, xvalue.addr, &(dzen.fg));
 		if( XrmGetResource(xdb, "dzen2.background", "*", datatype, &xvalue) == True )
-			dzen.bg  = estrdup(xvalue.addr);
-		if( XrmGetResource(xdb, "dzen2.titlename", "*", datatype, &xvalue) == True )
+                        XParseColor(dzen.dpy, cmap, xvalue.addr, &(dzen.bg));
+                if( XrmGetResource(xdb, "dzen2.titlename", "*", datatype, &xvalue) == True )
 			dzen.title_win.name  = estrdup(xvalue.addr);
 		if( XrmGetResource(xdb, "dzen2.slavename", "*", datatype, &xvalue) == True )
 			dzen.slave_win.name  = estrdup(xvalue.addr);
@@ -503,10 +503,10 @@ x_create_windows(int use_ewmh_dock) {
 	root = RootWindowOfScreen(dzen.screen);
 
 	/* style */
-	if((dzen.norm[ColBG] = getcolor(dzen.bg)) == ~0lu)
-		eprint("dzen: error, cannot allocate color '%s'\n", dzen.bg);
-	if((dzen.norm[ColFG] = getcolor(dzen.fg)) == ~0lu)
-		eprint("dzen: error, cannot allocate color '%s'\n", dzen.fg);
+	if((dzen.norm[ColBG] = dzen.bg.pixel) == ~0lu)
+		eprint("dzen: error, cannot allocate color '%s'\n", dzen.bg.flags);
+	if((dzen.norm[ColFG] = dzen.fg.pixel) == ~0lu)
+		eprint("dzen: error, cannot allocate color '%s'\n", dzen.fg.flags);
 	setfont(dzen.fnt);
 
 	x_create_gcs();
@@ -915,8 +915,6 @@ main(int argc, char *argv[]) {
 	dzen.title_win.alignment = ALIGNCENTER;
 	dzen.slave_win.alignment = ALIGNLEFT;
 	dzen.fnt = FONT;
-	dzen.bg  = BGCOLOR;
-	dzen.fg  = FGCOLOR;
 	dzen.slave_win.max_lines  = 0;
 	dzen.running = True;
 	dzen.xinescreen = 0;
@@ -927,6 +925,16 @@ main(int argc, char *argv[]) {
 	/* Connect to X server */
 	x_connect();
 	x_read_resources();
+
+	// used during initialization by XAllocNamedColor() and x_create_windows()/getcolor() below
+        // depends on x_connect() to allocate dzen.screen
+	cmap = DefaultColormapOfScreen(dzen.screen);
+
+        // dpy has to be allocated
+	if(!XAllocNamedColor(dzen.dpy, cmap, BGCOLOR, &(dzen.bg), &(dzen.bg)))
+	  eprint("dzen: error, cannot allocate bgcolor '%s'\n", BGCOLOR);
+	if(!XAllocNamedColor(dzen.dpy, cmap, FGCOLOR, &(dzen.fg), &(dzen.fg)))
+	  eprint("dzen: error, cannot allocate fgcolor '%s'\n", FGCOLOR);
 
 	/* cmdline args */
 	for(i = 1; i < argc; i++) {
@@ -1007,10 +1015,10 @@ main(int argc, char *argv[]) {
                        if(++i < argc) dzen.slave_win.name = argv[i]; continue;
 	       }
 	       if(!strncmp(argv[i], "-bg", 4)) {
-                       if(++i < argc) dzen.bg = argv[i]; continue;
+                       if(++i < argc) XAllocNamedColor(dzen.dpy, cmap, argv[i], &(dzen.bg), &(dzen.bg)); continue;
 	       }
 	       if(!strncmp(argv[i], "-fg", 4)) {
-                       if(++i < argc) dzen.fg = argv[i]; continue;
+                       if(++i < argc) XAllocNamedColor(dzen.dpy, cmap, argv[i], &(dzen.fg), &(dzen.fg)); continue;
 	       }
 	       if(!strncmp(argv[i], "-x", 3)) {
                        if(++i < argc) dzen.title_win.x = dzen.slave_win.x = atoi(argv[i]); continue;
@@ -1123,10 +1131,6 @@ main(int argc, char *argv[]) {
 			!dzen.slave_win.max_lines)
 		dzen.slave_win.max_lines = 1;
 
-	// x_create_windows below will use getcolor
-	// which needs cmap to be set
-	cmap = DefaultColormapOfScreen(dzen.screen);
-
 	x_create_windows(use_ewmh_dock);
 
 	if(!dzen.slave_win.ishmenu)
@@ -1153,4 +1157,3 @@ main(int argc, char *argv[]) {
 
 	return EXIT_SUCCESS;
 }
-

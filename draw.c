@@ -398,13 +398,11 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 #ifdef DZEN_XFT
 	XftDraw *xftd=NULL;
 	XftColor xftc;
-	char *xftcs;
-	int xftcs_f=0;
-	char *xftcs_bg;
-	int xftcs_bgf=0;
+	XRenderColor *xftcs = emalloc(sizeof(XRenderColor));
+	XRenderColor *xftcs_bg = emalloc(sizeof(XRenderColor));
+	XColorToXRenderColor(dzen.fg, xftcs);
+	XColorToXRenderColor(dzen.bg, xftcs_bg);
 
-	xftcs    = (char *)dzen.fg;
-    xftcs_bg = (char *)dzen.bg;
 #endif
 
 	/* icon cache */
@@ -448,8 +446,7 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 			xpms.pixel = dzen.norm[ColBG];
 #endif
 #ifdef DZEN_XFT
-			xftcs_bg = (char *)dzen.bg;
-			xftcs_bgf = 0;
+			XColorToXRenderColor(dzen.bg, xftcs_bg);
 #endif
 		}
 		else {
@@ -681,13 +678,10 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 						case bg:
 							lastbg = tval[0] ? (unsigned)getcolor(tval) : dzen.norm[ColBG];
 #ifdef DZEN_XFT
-							if(xftcs_bgf) free(xftcs_bg);				
 							if(tval[0]) {
-								xftcs_bg = estrdup(tval);
-								xftcs_bgf = 1;
+							  XRenderParseColor(dzen.dpy, tval, xftcs_bg);
 							} else {
-								xftcs_bg = (char *)dzen.bg;
-								xftcs_bgf = 0;
+							  XColorToXRenderColor(dzen.bg, xftcs_bg);
 							}
 #endif							
 
@@ -698,11 +692,9 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 							XSetForeground(dzen.dpy, dzen.tgc, lastfg);
 #ifdef DZEN_XFT
 							if(tval[0]) {
-								xftcs = estrdup(tval);
-								xftcs_f = 1;
+							  XRenderParseColor(dzen.dpy, tval, xftcs);
 							} else {
-								xftcs = (char *)dzen.fg;
-								xftcs_f = 0;
+							  XColorToXRenderColor(dzen.fg, xftcs);
 							}
 #endif							
 							break;
@@ -805,24 +797,15 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 					XDrawString(dzen.dpy, pm, dzen.tgc, px, py+dzen.font.ascent, lbuf, strlen(lbuf));
 #else
 				if(reverse) {
-				  XftColorAllocName(dzen.dpy, DefaultVisualOfScreen(dzen.screen),
+				  XftColorAllocValue(dzen.dpy, DefaultVisualOfScreen(dzen.screen),
 						    DefaultColormapOfScreen(dzen.screen),  xftcs_bg,  &xftc);
 				} else {
-				  XftColorAllocName(dzen.dpy, DefaultVisualOfScreen(dzen.screen),
+				  XftColorAllocValue(dzen.dpy, DefaultVisualOfScreen(dzen.screen),
 						    DefaultColormapOfScreen(dzen.screen),  xftcs,  &xftc);
 				}
 
 				XftDrawStringUtf8(xftd, &xftc, 
 						cur_fnt->xftfont, px, py + dzen.font.xftfont->ascent, (const FcChar8 *)lbuf, strlen(lbuf));
-
-				if(xftcs_f) {
-					free(xftcs);
-					xftcs_f = 0;
-				}
-				if(xftcs_bgf) {
-					free(xftcs_bg);
-					xftcs_bgf = 0;
-				}
 
 #endif
 
@@ -912,6 +895,8 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 #endif
 
 #ifdef DZEN_XFT
+		free(xftcs);
+		free(xftcs_bg);
 		XftDrawDestroy(xftd);
 #endif
 	}
