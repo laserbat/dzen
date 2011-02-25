@@ -15,6 +15,7 @@
 #endif
 
 #ifdef DZEN_XRESOURCES
+
 #include <X11/Xmu/Converters.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
@@ -22,14 +23,26 @@
 #define ALIGNCENTER XtJustifyCenter
 #define ALIGNLEFT   XtJustifyLeft
 #define ALIGNRIGHT  XtJustifyRight
+// used by XtOffset to store values not part of the dzen struct
+typedef struct {
+  String geometry;
+  Boolean dock;
+  String event;
+  String fnpre;
+  Boolean expand;
+} _myinit;
+
 #else
+
 #define FONT		"-*-fixed-*-*-*-*-*-*-*-*-*-*-*-*"
-#define BGCOLOR		"#111111"
-#define FGCOLOR		"grey70"
 #define ALIGNLEFT   0
 #define ALIGNCENTER 1
 #define ALIGNRIGHT  2
+
 #endif
+
+#define BGCOLOR		"#111111"
+#define FGCOLOR		"grey70"
 #define ESC_CHAR    '^'
 
 

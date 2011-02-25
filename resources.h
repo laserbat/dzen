@@ -92,9 +92,9 @@ static XtResource      titleResList[] = {
      passed to -fn or given in .Xresources */
   { XtNfontSet, XtCFontSet, XtRFontSet, sizeof(XFontSet),
     offset(font.set), XtRString, "-*-fixed-*-*-*-*-*-*-*-*-*-*-*-*"},
-  { XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
+  { XtNforeground, XtCForeground, XtRColor, sizeof(XColor),
     offset(fg), XtRImmediate, XtDefaultForeground},
-  { XtNbackground, XtCBackground, XtRPixel, sizeof(Pixel),
+  { XtNbackground, XtCBackground, XtRColor, sizeof(XColor),
     offset(bg), XtRImmediate, XtDefaultBackground},
   { "timeout", "timeout", XtRLong, sizeof(long),
     offset(timeout), XtRImmediate, (XtPointer)0},
@@ -193,13 +193,12 @@ static char *help_list[] = {
   "[-u]",
   "[-title-name <string>]",
   "[-slave-name <string>]",
-  "[--profile <string>]",
   "[-fn-preload <string>]",
 #ifdef DZEN_XINERAMA
   "[-xs <screen>]",
 #endif
 #ifdef DZEN_XRESOURCES
-  "[-profile <classname>]",
+  "[--profile <classname>]",
 #endif
   NULL
 };

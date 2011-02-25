@@ -906,7 +906,31 @@ main(int argc, char *argv[]) {
 
 	/* Connect to X server */
 	x_connect();
+
+#ifdef DZEN_XRESOURCES
+	char profile[20];
+	profile[0] = '\0';
+	//1st pass looking for --profile option, it may be overriden by cmdline args
+	for(i = 1; i < argc; i++) {
+	  if(!strncmp(argv[i], "--profile", 10) && ++i < argc && strlen(argv[i]) < 20) {
+	    strncpy(profile, argv[i], 20);
+	    break;
+	  }
+	}
+
+	Widget widget;
+	XtToolkitInitialize();
+	XtAppContext appContext = XtCreateApplicationContext();
+
+	if(! *profile) {
+	  widget = XtOpenApplication(&appContext, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+	}
+	else {
+	  widget = XtOpenApplication(&appContext, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+	}
+#else
 	x_read_resources();
+#endif
 
 	/* cmdline args */
 	for(i = 1; i < argc; i++) {
@@ -1057,6 +1081,9 @@ main(int argc, char *argv[]) {
 			);
 			return EXIT_SUCCESS;
 	      }
+	      if(!strncmp(argv[i], "--profile", 10)) {
+		i++; continue;
+	      }
 	      eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
                    "             [-x <pixel>] [-y <pixel>] [-w <pixel>] [-h <pixel>] [-tw <pixel>] [-u]\n"
 				   "             [-e <string>] [-l <lines>]  [-fn <font>] [-bg <color>] [-fg <color>]\n"
@@ -1067,6 +1094,7 @@ main(int argc, char *argv[]) {
 #endif
 				  );
 	}
+
 	if(dzen.tsupdate && !dzen.slave_win.max_lines)
 		dzen.tsupdate = False;
 
