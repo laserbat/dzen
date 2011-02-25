@@ -930,6 +930,16 @@ main(int argc, char *argv[]) {
         XtAddConverter( XtRString, XtRLong, XmuCvtStringToLong, NULL, 0 );
         // XtSetTypeConverter( XtRString, XtRLong, XmuCvtStringToLong, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
 
+	Screen *tscreen = DefaultScreenOfDisplay(dzen.dpy);
+	Colormap tcmap = DefaultColormapOfScreen(tscreen);
+	XtConvertArgRec vargs[] = {
+	  // because libXt:Converters.c::XtCvtStringToPixel() uses
+	  // screen = *((Screen **) args[0].addr);
+	  { XtAddress, &tscreen, sizeof(Screen) },
+	  { XtAddress, &tcmap, sizeof(Colormap) }
+	};
+	XtSetTypeConverter( XtRString, XtRColor, CvtStringToXColor, vargs, XtNumber(vargs), XtCacheNone, NULL);
+
 	if(! *profile)
 	  widget = XtOpenApplication(&appContext, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
 	else
