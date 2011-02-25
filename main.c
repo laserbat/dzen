@@ -908,6 +908,7 @@ main(int argc, char *argv[]) {
 	x_connect();
 
 #ifdef DZEN_XRESOURCES
+	XrmInitialize();
 	char profile[20];
 	profile[0] = '\0';
 	//1st pass looking for --profile option, it may be overriden by cmdline args
@@ -918,16 +919,24 @@ main(int argc, char *argv[]) {
 	  }
 	}
 
+	_myinit myinit;
 	Widget widget;
 	XtToolkitInitialize();
 	XtAppContext appContext = XtCreateApplicationContext();
 
-	if(! *profile) {
+	if(! *profile)
 	  widget = XtOpenApplication(&appContext, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
-	}
-	else {
+	else
 	  widget = XtOpenApplication(&appContext, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
-	}
+
+	XtGetApplicationResources(widget, &myinit, appResList, XtNumber(appResList), NULL, 0);
+	XtGetApplicationResources(widget, &dzen, dzenResList, XtNumber(dzenResList), NULL, 0);
+	XtGetSubresources(widget, &dzen.slave_win, "slave", "Slave", slaveResList, XtNumber(slaveResList), NULL, 0);
+	XtGetSubresources(widget, &dzen.title_win, "title", "Title", titleResList, XtNumber(titleResList), NULL, 0);
+
+	use_ewmh_dock = myinit.dock;
+	action_string = myinit.event;
+	fnpre = myinit.fnpre;
 #else
 	x_read_resources();
 #endif
