@@ -924,6 +924,12 @@ main(int argc, char *argv[]) {
 	XtToolkitInitialize();
 	XtAppContext appContext = XtCreateApplicationContext();
 
+        XtAddConverter( XtRString, XtRJustify, XmuCvtStringToJustify, NULL, 0 );
+        // XtSetTypeConverter( XtRString, XtRJustify, XmuCvtStringToJustify, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
+	// used by the XtRLong "timeout"
+        XtAddConverter( XtRString, XtRLong, XmuCvtStringToLong, NULL, 0 );
+        // XtSetTypeConverter( XtRString, XtRLong, XmuCvtStringToLong, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
+
 	if(! *profile)
 	  widget = XtOpenApplication(&appContext, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
 	else
