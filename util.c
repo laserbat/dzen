@@ -64,3 +64,8 @@ spawn(const char *arg) {
 	wait(0);
 }
 
+Boolean
+CvtStringToXColor(Display *dpy, XrmValue *args, Cardinal *num_args, XrmValue *fromVal, XrmValue *toVal, XtPointer *converter_data ) {
+	XtCallConverter(dpy, XtCvtStringToPixel, args, *num_args, fromVal, toVal, NULL);
+	XtCallConverter(dpy, XtCvtPixelToColor, args, *num_args, toVal, toVal, NULL);
+}
