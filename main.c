@@ -264,7 +264,7 @@ x_check_geometry(XRectangle scr) {
 }
 
 static void
-qsi_no_xinerama(Display *dpy, XRectangle *rect) {
+qsi_no_xinerama(XRectangle *rect) {
 	rect->x = 0;
 	rect->y = 0;
 	rect->width  = WidthOfScreen(dzen.screen);
@@ -281,7 +281,7 @@ queryscreeninfo(Display *dpy, XRectangle *rect, int screen) {
 		xsi = XineramaQueryScreens(dpy, &nscreens);
 
 	if(xsi == NULL || screen > nscreens || screen <= 0) {
-		qsi_no_xinerama(dpy, rect);
+		qsi_no_xinerama(rect);
 	}
 	else {
 		rect->x      = xsi[screen-1].x_org;
@@ -335,7 +335,7 @@ set_docking_ewmh_info(Display *dpy, Window w, int dock) {
 #ifdef DZEN_XINERAMA
 	queryscreeninfo(dpy,&si,dzen.xinescreen);
 #else
-	qsi_no_xinerama(dpy,&si);
+	qsi_no_xinerama(&si);
 #endif
 	if(wa.y - si.y == 0) {
 		strut[2] = si.y + wa.height;
@@ -519,7 +519,7 @@ x_create_windows(int use_ewmh_dock) {
 #ifdef DZEN_XINERAMA
 	queryscreeninfo(dzen.dpy, &si, dzen.xinescreen);
 #else
-	qsi_no_xinerama(dzen.dpy, &si);
+	qsi_no_xinerama(&si);
 #endif
 	x_check_geometry(si);
 
