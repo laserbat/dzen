@@ -67,8 +67,13 @@ spawn(const char *arg) {
 #ifdef DZEN_XRESOURCES
 Boolean
 CvtStringToXColor(Display *dpy, XrmValue *args, Cardinal *num_args, XrmValue *fromVal, XrmValue *toVal, XtPointer *converter_data ) {
-	if (XtCallConverter(dpy, XtCvtStringToPixel, args, *num_args, fromVal, toVal, NULL) == True)
-		return XtCallConverter(dpy, XtCvtPixelToColor, args, *num_args, toVal, toVal, NULL);
-	return False;
+  XrmValue *pixelVal = XtNew(XrmValue);
+  // needed by the donestr macro of libXt
+  pixelVal->size = sizeof(Pixel);
+  Status st = False;
+  if (XtCallConverter(dpy, XtCvtStringToPixel, args, *num_args, fromVal, pixelVal, NULL) == True)
+    st = XtCallConverter(dpy, XtCvtPixelToColor, args, *num_args, pixelVal, toVal, NULL);
+  XtFree((char *)pixelVal);
+  return st;
 }
 #endif
