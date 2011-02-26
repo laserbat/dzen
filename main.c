@@ -904,9 +904,6 @@ main(int argc, char *argv[]) {
 	dzen.line_height = 0;
 	dzen.title_win.expand = noexpand;
 
-	/* Connect to X server */
-	x_connect();
-
 #ifdef DZEN_XRESOURCES
 	XrmInitialize();
 	char profile[20];
@@ -928,30 +925,35 @@ main(int argc, char *argv[]) {
         XtAddConverter( XtRString, XtRLong, XmuCvtStringToLong, NULL, 0 );
         // XtSetTypeConverter( XtRString, XtRLong, XmuCvtStringToLong, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
 
-	Screen *tscreen = DefaultScreenOfDisplay(dzen.dpy);
-	Colormap tcmap = DefaultColormapOfScreen(tscreen);
-	XtConvertArgRec vargs[] = {
-	  // because libXt:Converters.c::XtCvtStringToPixel() uses
-	  // screen = *((Screen **) args[0].addr);
-	  { XtAddress, &tscreen, sizeof(Screen) },
-	  { XtAddress, &tcmap, sizeof(Colormap) }
-	};
-	XtSetTypeConverter( XtRString, XtRColor, CvtStringToXColor, vargs, XtNumber(vargs), XtCacheNone, NULL);
-
+	// XtOpenApplication will do the Xt equivalent of OpenDisplay + the Xrm equivalent of x_read_resources()
 	if(! *profile)
 	  widget = XtOpenApplication(NULL, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
 	else
 	  widget = XtOpenApplication(NULL, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+
+	Screen *tscreen = XtScreenOfObject(widget);
+	Colormap cmap = DefaultColormapOfScreen(tscreen);
+	XtConvertArgRec vargs[] = {
+	  // because libXt:Converters.c::XtCvtStringToPixel() uses
+	  // screen = *((Screen **) args[0].addr);
+	  { XtAddress, &tscreen, sizeof(Screen) },
+	  { XtAddress, &cmap, sizeof(Colormap) }
+	};
+	XtSetTypeConverter( XtRString, XtRColor, CvtStringToXColor, vargs, XtNumber(vargs), XtCacheNone, NULL);
 
 	XtGetApplicationResources(widget, &myinit, appResList, XtNumber(appResList), NULL, 0);
 	XtGetApplicationResources(widget, &dzen, dzenResList, XtNumber(dzenResList), NULL, 0);
 	XtGetSubresources(widget, &dzen.slave_win, "slave", "Slave", slaveResList, XtNumber(slaveResList), NULL, 0);
 	XtGetSubresources(widget, &dzen.title_win, "title", "Title", titleResList, XtNumber(titleResList), NULL, 0);
 
+	dzen.screen = tscreen;
+	dzen.dpy = XtDisplayOfObject(widget);
 	use_ewmh_dock = myinit.dock;
 	action_string = myinit.event;
 	fnpre = myinit.fnpre;
 #else
+	/* Connect to X server */
+	x_connect();
 	x_read_resources();
 #endif
 
