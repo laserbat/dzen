@@ -14,14 +14,37 @@
 #include <X11/Xft/Xft.h>
 #endif
 
+#ifdef DZEN_XRESOURCES
+
+#include <X11/Xmu/Converters.h>
+#include <X11/StringDefs.h>
+#include <X11/Shell.h>
+#define FONT XtDefaultFont
+#define ALIGNCENTER XtJustifyCenter
+#define ALIGNLEFT   XtJustifyLeft
+#define ALIGNRIGHT  XtJustifyRight
+// used by XtOffset to store values not part of the dzen struct
+typedef struct {
+  String geometry;
+  Boolean dock;
+  String event;
+  String fnpre;
+  Boolean expand;
+} _myinit;
+
+#else
+
 #define FONT		"-*-fixed-*-*-*-*-*-*-*-*-*-*-*-*"
+#define ALIGNLEFT   0
+#define ALIGNCENTER 1
+#define ALIGNRIGHT  2
+
+#endif
+
 #define BGCOLOR		"#111111"
 #define FGCOLOR		"grey70"
 #define ESC_CHAR    '^'
 
-#define ALIGNCENTER 0
-#define ALIGNLEFT   1
-#define ALIGNRIGHT  2
 
 #define MIN_BUF_SIZE   1024
 #define MAX_LINE_LEN   8192
@@ -179,3 +202,8 @@ extern void eprint(const char *errstr, ...);	/* prints errstr and exits with 1 *
 extern char *estrdup(const char *str);			/* duplicates str, exits on allocation error */
 extern void spawn(const char *arg);				/* execute arg */
 extern void XColorToXRenderColor(XColor xcol, XRenderColor *rendcol);
+
+#ifdef DZEN_XRESOURCES
+extern Boolean CvtStringToXColor(Display *dpy, XrmValue *args, Cardinal *num_args, XrmValue *fromVal, XrmValue *toVal, XtPointer *converter_data );	/* converts command line color option to XColor */
+#endif
+

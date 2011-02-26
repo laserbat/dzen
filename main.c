@@ -6,6 +6,7 @@
 
 #include "dzen.h"
 #include "action.h"
+#include "resources.h"
 
 #include <ctype.h>
 #include <locale.h>
@@ -922,9 +923,58 @@ main(int argc, char *argv[]) {
 	dzen.line_height = 0;
 	dzen.title_win.expand = noexpand;
 
+#ifdef DZEN_XRESOURCES
+	XrmInitialize();
+	char profile[20];
+	profile[0] = '\0';
+	//1st pass looking for --profile option, it may be overriden by cmdline args
+	for(i = 1; i < argc; i++) {
+	  if(!strncmp(argv[i], "--profile", 10) && ++i < argc && strlen(argv[i]) < 20) {
+	    strncpy(profile, argv[i], 20);
+	    break;
+	  }
+	}
+
+	_myinit myinit;
+	Widget widget;
+
+        XtAddConverter( XtRString, XtRJustify, XmuCvtStringToJustify, NULL, 0 );
+        // XtSetTypeConverter( XtRString, XtRJustify, XmuCvtStringToJustify, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
+	// used by the XtRLong "timeout"
+        XtAddConverter( XtRString, XtRLong, XmuCvtStringToLong, NULL, 0 );
+        // XtSetTypeConverter( XtRString, XtRLong, XmuCvtStringToLong, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
+
+	// XtOpenApplication will do the Xt equivalent of OpenDisplay + the Xrm equivalent of x_read_resources()
+	if(! *profile)
+	  widget = XtOpenApplication(NULL, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+	else
+	  widget = XtOpenApplication(NULL, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+
+	Screen *tscreen = XtScreenOfObject(widget);
+	Colormap cmap = DefaultColormapOfScreen(tscreen);
+	XtConvertArgRec vargs[] = {
+	  // because libXt:Converters.c::XtCvtStringToPixel() uses
+	  // screen = *((Screen **) args[0].addr);
+	  { XtAddress, &tscreen, sizeof(Screen) },
+	  { XtAddress, &cmap, sizeof(Colormap) }
+	};
+	XtSetTypeConverter( XtRString, XtRColor, CvtStringToXColor, vargs, XtNumber(vargs), XtCacheNone, NULL);
+
+	XtGetApplicationResources(widget, &myinit, appResList, XtNumber(appResList), NULL, 0);
+	XtGetApplicationResources(widget, &dzen, dzenResList, XtNumber(dzenResList), NULL, 0);
+	XtGetSubresources(widget, &dzen.slave_win, "slave", "Slave", slaveResList, XtNumber(slaveResList), NULL, 0);
+	XtGetSubresources(widget, &dzen.title_win, "title", "Title", titleResList, XtNumber(titleResList), NULL, 0);
+
+	dzen.screen = tscreen;
+	dzen.dpy = XtDisplayOfObject(widget);
+	use_ewmh_dock = myinit.dock;
+	action_string = myinit.event;
+	fnpre = myinit.fnpre;
+#else
 	/* Connect to X server */
 	x_connect();
 	x_read_resources();
+#endif
 
 	// used during initialization by XAllocNamedColor() and x_create_windows()/getcolor() below
         // depends on x_connect() to allocate dzen.screen
@@ -1067,6 +1117,9 @@ main(int argc, char *argv[]) {
 			);
 			return EXIT_SUCCESS;
 	      }
+	      if(!strncmp(argv[i], "--profile", 10)) {
+		i++; continue;
+	      }
 	      eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
                    "             [-x <pixel>] [-y <pixel>] [-w <pixel>] [-h <pixel>] [-tw <pixel>] [-u]\n"
 				   "             [-e <string>] [-l <lines>]  [-fn <font>] [-bg <color>] [-fg <color>]\n"
@@ -1077,6 +1130,7 @@ main(int argc, char *argv[]) {
 #endif
 				  );
 	}
+
 	if(dzen.tsupdate && !dzen.slave_win.max_lines)
 		dzen.tsupdate = False;
 
