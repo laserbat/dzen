@@ -931,9 +931,9 @@ main(int argc, char *argv[]) {
 	cmap = DefaultColormapOfScreen(dzen.screen);
 
         // dpy has to be allocated
-	if(!XAllocNamedColor(dzen.dpy, cmap, BGCOLOR, &(dzen.bg), &(dzen.bg)))
+	if(!XParseColor(dzen.dpy, cmap, BGCOLOR, &(dzen.bg)))
 	  eprint("dzen: error, cannot allocate bgcolor '%s'\n", BGCOLOR);
-	if(!XAllocNamedColor(dzen.dpy, cmap, FGCOLOR, &(dzen.fg), &(dzen.fg)))
+	if(!XParseColor(dzen.dpy, cmap, FGCOLOR, &(dzen.fg)))
 	  eprint("dzen: error, cannot allocate fgcolor '%s'\n", FGCOLOR);
 
 	/* cmdline args */
@@ -1015,10 +1015,10 @@ main(int argc, char *argv[]) {
                        if(++i < argc) dzen.slave_win.name = argv[i]; continue;
 	       }
 	       if(!strncmp(argv[i], "-bg", 4)) {
-                       if(++i < argc) XAllocNamedColor(dzen.dpy, cmap, argv[i], &(dzen.bg), &(dzen.bg)); continue;
+                       if(++i < argc) XParseColor(dzen.dpy, cmap, argv[i], &(dzen.bg)); continue;
 	       }
 	       if(!strncmp(argv[i], "-fg", 4)) {
-                       if(++i < argc) XAllocNamedColor(dzen.dpy, cmap, argv[i], &(dzen.fg), &(dzen.fg)); continue;
+                       if(++i < argc) XParseColor(dzen.dpy, cmap, argv[i], &(dzen.fg)); continue;
 	       }
 	       if(!strncmp(argv[i], "-x", 3)) {
                        if(++i < argc) dzen.title_win.x = dzen.slave_win.x = atoi(argv[i]); continue;
