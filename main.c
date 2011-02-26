@@ -921,8 +921,6 @@ main(int argc, char *argv[]) {
 
 	_myinit myinit;
 	Widget widget;
-	XtToolkitInitialize();
-	XtAppContext appContext = XtCreateApplicationContext();
 
         XtAddConverter( XtRString, XtRJustify, XmuCvtStringToJustify, NULL, 0 );
         // XtSetTypeConverter( XtRString, XtRJustify, XmuCvtStringToJustify, (XtConvertArgList)NULL, (Cardinal)0, XtCacheNone, (XtDestructor)NULL );
@@ -941,9 +939,9 @@ main(int argc, char *argv[]) {
 	XtSetTypeConverter( XtRString, XtRColor, CvtStringToXColor, vargs, XtNumber(vargs), XtCacheNone, NULL);
 
 	if(! *profile)
-	  widget = XtOpenApplication(&appContext, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+	  widget = XtOpenApplication(NULL, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
 	else
-	  widget = XtOpenApplication(&appContext, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
+	  widget = XtOpenApplication(NULL, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
 
 	XtGetApplicationResources(widget, &myinit, appResList, XtNumber(appResList), NULL, 0);
 	XtGetApplicationResources(widget, &dzen, dzenResList, XtNumber(dzenResList), NULL, 0);
