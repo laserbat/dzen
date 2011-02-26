@@ -62,7 +62,7 @@ typedef struct {
 enum { ColFG, ColBG, ColLast };
 
 /* exapansion directions */
-enum { noexpand, left, right, both };
+enum { left, both, right, noexpand };
 
 typedef struct DZEN Dzen;
 typedef struct Fnt Fnt;
@@ -202,4 +202,8 @@ extern void *emalloc(unsigned int size);		/* allocates memory, exits on error */
 extern void eprint(const char *errstr, ...);	/* prints errstr and exits with 1 */
 extern char *estrdup(const char *str);			/* duplicates str, exits on allocation error */
 extern void spawn(const char *arg);				/* execute arg */
+
+#ifdef DZEN_XRESOURCES
 extern Boolean CvtStringToXColor(Display *dpy, XrmValue *args, Cardinal *num_args, XrmValue *fromVal, XrmValue *toVal, XtPointer *converter_data );	/* converts command line color option to XColor */
+#endif
+
