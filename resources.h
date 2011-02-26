@@ -84,18 +84,22 @@ static XtResource      titleResList[] = {
 };
 #undef offset
 
+/*
+  The default values here are used if a command line argument is provided
+  but is not convertible to a X type
+  The Xt<Default> are defined and used by libXt Converters.c
+*/
 #define offset(field) XtOffsetOf(Dzen, field)
   static XtResource      dzenResList[] = {
-  /* TODO: use XtDefaultFontSet ? */
   /* WARNING : it parse a fontSet ! not a font !
      so be sure to put at least one * (wildcard) in the fontset string
      passed to -fn or given in .Xresources */
   { XtNfontSet, XtCFontSet, XtRFontSet, sizeof(XFontSet),
-    offset(font.set), XtRString, "-*-fixed-*-*-*-*-*-*-*-*-*-*-*-*"},
+    offset(font.set), XtRString, XtDefaultFontSet},
   { XtNforeground, XtCForeground, XtRColor, sizeof(XColor),
-    offset(fg), XtRImmediate, XtDefaultForeground},
+    offset(fg), XtRString, XtDefaultForeground},
   { XtNbackground, XtCBackground, XtRColor, sizeof(XColor),
-    offset(bg), XtRImmediate, XtDefaultBackground},
+    offset(bg), XtRString, XtDefaultBackground},
   { "timeout", "timeout", XtRLong, sizeof(long),
     offset(timeout), XtRImmediate, (XtPointer)0},
   { "persistent", "persistent", XtRBoolean, sizeof(Boolean),
