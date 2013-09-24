@@ -1,0 +1,890 @@
+Index: dzen.h
+===================================================================
+--- dzen.h	(révision 267)
++++ dzen.h	(copie de travail)
+@@ -14,15 +14,34 @@
+ #include <X11/Xft/Xft.h>
+ #endif
+ 
++#ifdef DZEN_XRESOURCES
++#include <X11/Xmu/Converters.h>
++#include <X11/StringDefs.h>
++#include <X11/Shell.h>
++#define FONT XtDefaultFont
++#define ALIGNCENTER XtJustifyCenter
++#define ALIGNLEFT   XtJustifyLeft
++#define ALIGNRIGHT  XtJustifyRight
++#undef DefaultDepth
++#define DefaultDepth(dpy, screen) DefaultDepthOfScreen(screen)
++#undef DefaultVisual
++#define DefaultVisual(dpy, screen) DefaultVisualOfScreen(screen)
++#undef RootWindow
++#define RootWindow(dpy, screen) RootWindowOfScreen(screen)
++#undef DefaultColormap
++#define DefaultColormap(dpy, screen) DefaultColormapOfScreen(screen)
++#else
++
+ #define FONT		"-*-fixed-*-*-*-*-*-*-*-*-*-*-*-*"
+ #define BGCOLOR		"#111111"
+ #define FGCOLOR		"grey70"
++#define ALIGNLEFT   0
++#define ALIGNCENTER 1
++#define ALIGNRIGHT  2
++#endif
++
+ #define ESC_CHAR    '^'
+ 
+-#define ALIGNCENTER 0
+-#define ALIGNLEFT   1
+-#define ALIGNRIGHT  2
+-
+ #define MIN_BUF_SIZE   1024
+ #define MAX_LINE_LEN   8192
+ 
+@@ -39,7 +58,7 @@
+ enum { ColFG, ColBG, ColLast };
+ 
+ /* exapansion directions */
+-enum { noexpand, left, right, both };
++enum { left, both, right, noexpand };
+ 
+ typedef struct DZEN Dzen;
+ typedef struct Fnt Fnt;
+@@ -127,12 +146,22 @@
+ 	Window sa_win;
+ 
+ 	const char *fnt;
++#ifdef DZEN_XRESOURCES
++	Pixel bg;
++	Pixel fg;
++#else
+ 	const char *bg;
+ 	const char *fg;
++#endif
++
+ 	int line_height;
+ 
+ 	Display *dpy;
++#ifdef DZEN_XRESOURCES
++	Screen *screen;
++#else
+ 	int screen;
++#endif
+ 	unsigned int depth;
+ 
+ 	Visual *visual;
+@@ -168,6 +197,7 @@
+ 		int nodraw);
+ extern long getcolor(const char *colstr);		/* returns color of colstr */
+ extern void setfont(const char *fontstr);		/* sets global font */
++void setextents(Fnt *font);				/* set font extents */
+ extern unsigned int textw(const char *text);	/* returns width of text in px */
+ extern void drawheader(const char *text);
+ extern void drawbody(char *text);
+@@ -177,3 +207,13 @@
+ extern void eprint(const char *errstr, ...);	/* prints errstr and exits with 1 */
+ extern char *estrdup(const char *str);			/* duplicates str, exits on allocation error */
+ extern void spawn(const char *arg);				/* execute arg */
++
++#ifdef DZEN_XRESOURCES
++typedef struct {
++  String geometry;
++  Boolean dock;
++  String event;
++  String fnpre;
++  Boolean expand;
++} _myinit;
++#endif
+Index: README
+===================================================================
+--- README	(révision 267)
++++ README	(copie de travail)
+@@ -100,15 +100,58 @@
+ X resources
+ -----------
+ 
+-Dzen is able to read font and color setting from X resources.
+-As an example you can add following lines to ~/.Xresources
++Dzen is able to read setting from X resources if built
++with DZEN_XRESOURCES (libXt and libXmu needed)
+ 
+-dzen2.font:       -*-fixed-*-*-*-*-*-*-*-*-*-*-*-*
+-dzen2.foreground: #22EE11
+-dzen2.background: black
++Here are the default values :
++  *fontSet: -*-fixed-*-*-*-*-*-*-*-*-*-*-*-*
++  *background: #111111
++  *foreground: grey70
+ 
++  *title.title: dzen title
++  *title.width: 0
++  *title.justify: center
++  *title.expand-dir: center
++  *title.y: 0
+ 
++  *slave.title: dzen slave
++  *slave.width: 0
++  *slave.justify: left
++  *slave.ismenu: False
++  *slave.ishmenu: False
++  *slave.x: 0
+ 
++  *expand: False
++
++  *lines: 0
++  *update: False
++  
++  *persistent: False
++  *timeout: 0
++
++  *height: 0
++  *geometry: 0x0+0+0
++
++  *dock: False
++  *event:
++
++The Xresource to use is set by the '--profile' option.
++The default is 'dzen2'
++eg: dzen2 --profile dzen2_mpd will load the lines
++of a .Xdefaults/.Xresources begining with : 'dzen2_mpd.'
++
++Notes:
++- ishmenu: True needs ismenu: True to work
++- title.expand-dir is taken into account if expand: True
++- expand-dir: center => expand in both direction
++- non-zero geometry [!= 0x0+0+0] take precedence over
++   individual coordinates
++- abscissa and ordinate doesn't affect the same components
++- persistent still default to False (specifing *timeout doesn't
++  change that) 
++- for 'event' resource see (2)
++
++
+ Window layout
+ -------------
+ 
+Index: main.c
+===================================================================
+--- main.c	(révision 267)
++++ main.c	(copie de travail)
+@@ -4,8 +4,10 @@
+  *
+  */
+ 
++/* TODO -w option not used, Xresource IS */
+ #include "dzen.h"
+ #include "action.h"
++#include "resources.h"
+ 
+ #include <ctype.h>
+ #include <locale.h>
+@@ -266,8 +268,13 @@
+ qsi_no_xinerama(Display *dpy, XRectangle *rect) {
+ 	rect->x = 0;
+ 	rect->y = 0;
++#ifndef DZEN_XRESOURCES
+ 	rect->width  = DisplayWidth( dpy, DefaultScreen(dpy));
+ 	rect->height = DisplayHeight(dpy, DefaultScreen(dpy));
++#else
++	rect->width  = WidthOfScreen(dzen.screen);
++	rect->height = HeightOfScreen(dzen.screen);
++#endif
+ }
+ 
+ #ifdef DZEN_XINERAMA
+@@ -457,6 +464,7 @@
+ 	dzen.tgc = XCreateGC(dzen.dpy, RootWindow(dzen.dpy, dzen.screen), GCGraphicsExposures, &gcv);
+ }
+ 
++#ifndef DZEN_XRESOURCES
+ static void
+ x_connect(void) {
+ 	dzen.dpy = XOpenDisplay(0);
+@@ -464,34 +472,9 @@
+ 		eprint("dzen: cannot open display\n");
+ 	dzen.screen = DefaultScreen(dzen.dpy);
+ }
++#endif
+ 
+-/* Read display styles from X resources. */
+ static void
+-x_read_resources(void) {
+-	XrmDatabase xdb;
+-	char* xrm;
+-	char* datatype[20];
+-	XrmValue xvalue;
+-
+-	XrmInitialize();
+-	xrm = XResourceManagerString(dzen.dpy);
+-	if( xrm != NULL ) {
+-		xdb = XrmGetStringDatabase(xrm);
+-		if( XrmGetResource(xdb, "dzen2.font", "*", datatype, &xvalue) == True )
+-			dzen.fnt = estrdup(xvalue.addr);
+-		if( XrmGetResource(xdb, "dzen2.foreground", "*", datatype, &xvalue) == True )
+-			dzen.fg  = estrdup(xvalue.addr);
+-		if( XrmGetResource(xdb, "dzen2.background", "*", datatype, &xvalue) == True )
+-			dzen.bg  = estrdup(xvalue.addr);
+-		if( XrmGetResource(xdb, "dzen2.titlename", "*", datatype, &xvalue) == True )
+-			dzen.title_win.name  = estrdup(xvalue.addr);
+-		if( XrmGetResource(xdb, "dzen2.slavename", "*", datatype, &xvalue) == True )
+-			dzen.slave_win.name  = estrdup(xvalue.addr);
+-		XrmDestroyDatabase(xdb);
+-	}
+-}
+-
+-static void
+ x_create_windows(int use_ewmh_dock) {
+ 	XSetWindowAttributes wa;
+ 	Window root;
+@@ -501,6 +484,7 @@
+ 
+ 	root = RootWindow(dzen.dpy, dzen.screen);
+ 
++#ifndef DZEN_XRESOURCES
+ 	/* style */
+ 	if((dzen.norm[ColBG] = getcolor(dzen.bg)) == ~0lu)
+ 		eprint("dzen: error, cannot allocate color '%s'\n", dzen.bg);
+@@ -508,6 +492,14 @@
+ 		eprint("dzen: error, cannot allocate color '%s'\n", dzen.fg);
+ 	setfont(dzen.fnt);
+ 
++#else
++	if((dzen.norm[ColBG] = dzen.bg) == ~0lu)
++		eprint("dzen: error, cannot allocate color '%s'\n", dzen.bg);
++	if((dzen.norm[ColFG] = dzen.fg) == ~0lu)
++		eprint("dzen: error, cannot allocate color '%s'\n", dzen.fg);
++	setextents(&(dzen.font));
++	dzen.font.height = dzen.font.ascent + dzen.font.descent;
++#endif
+ 	x_create_gcs();
+ 
+ 	/* window attributes */
+@@ -821,29 +813,17 @@
+ static void
+ x_preload(const char *fontstr, int p) {
+ 	char *def, **missing;
+-	int i, n;
++	int n;
+ 
+ 	missing = NULL;
+ 
++	/* TODO : use XFontSet of dzen.fnt if fnpl NULL */
+ 	dzen.fnpl[p].set = XCreateFontSet(dzen.dpy, fontstr, &missing, &n, &def);
+ 	if(missing)
+ 		XFreeStringList(missing);
+ 
+-	if(dzen.fnpl[p].set) {
+-		XFontSetExtents *font_extents;
+-		XFontStruct **xfonts;
+-		char **font_names;
+-		dzen.fnpl[p].ascent = dzen.fnpl[p].descent = 0;
+-		font_extents = XExtentsOfFontSet(dzen.fnpl[p].set);
+-		n = XFontsOfFontSet(dzen.fnpl[p].set, &xfonts, &font_names);
+-		for(i = 0, dzen.fnpl[p].ascent = 0, dzen.fnpl[p].descent = 0; i < n; i++) {
+-			if(dzen.fnpl[p].ascent < (*xfonts)->ascent)
+-				dzen.fnpl[p].ascent = (*xfonts)->ascent;
+-			if(dzen.fnpl[p].descent < (*xfonts)->descent)
+-				dzen.fnpl[p].descent = (*xfonts)->descent;
+-			xfonts++;
+-		}
+-	}
++	if(dzen.fnpl[p].set)
++	  setextents(&(dzen.fnpl[p]));
+ 	else {
+ 		if(dzen.fnpl[p].xfont)
+ 			XFreeFont(dzen.dpy, dzen.fnpl[p].xfont);
+@@ -867,6 +847,7 @@
+ 	}
+ }
+ 
++#ifndef DZEN_XRESOURCES
+ /* Get alignment from character 'l'eft, 'r'ight and 'c'enter */
+ static char
+ alignment_from_char(char align) {
+@@ -877,6 +858,7 @@
+ 		default  : return ALIGNCENTER;
+ 	}
+ }
++#endif
+ 
+ static void
+ init_input_buffer(void) {
+@@ -888,15 +870,39 @@
+ 	dzen.slave_win.tbuf = emalloc(dzen.slave_win.tsize * sizeof(char *));
+ }
+ 
++void parse_geo(char *geo) {
++  int t, tx, ty;
++  unsigned int tw, th;
++
++  t = XParseGeometry(geo, &tx, &ty, &tw, &th);
++
++  if(t & XValue)
++    dzen.title_win.x = tx;
++  if(t & YValue) {
++    dzen.title_win.y = ty;
++    if(!ty && (t & YNegative))
++      /* -0 != +0 */
++      dzen.title_win.y = -1;
++  }
++  if(t & WidthValue)
++    dzen.title_win.width = (signed int) tw;
++  if(t & HeightValue)
++    dzen.line_height = (signed int) th;
++}
++
+ int
+ main(int argc, char *argv[]) {
+ 	int i, use_ewmh_dock=0;
+ 	char *action_string = NULL;
+ 	char *endptr, *fnpre = NULL;
+ 
++#ifndef DZEN_XRESOURCES
+ 	/* default values */
+ 	dzen.title_win.name = "dzen title";
+ 	dzen.slave_win.name = "dzen slave";
++	dzen.fnt = FONT;
++	dzen.bg  = BGCOLOR;
++	dzen.fg  = FGCOLOR;
+ 	dzen.cur_line  = 0;
+ 	dzen.ret_val   = 0;
+ 	dzen.title_win.x = dzen.slave_win.x = 0;
+@@ -904,56 +910,92 @@
+ 	dzen.title_win.width = dzen.slave_win.width = 0;
+ 	dzen.title_win.alignment = ALIGNCENTER;
+ 	dzen.slave_win.alignment = ALIGNLEFT;
+-	dzen.fnt = FONT;
+-	dzen.bg  = BGCOLOR;
+-	dzen.fg  = FGCOLOR;
+ 	dzen.slave_win.max_lines  = 0;
+-	dzen.running = True;
+ 	dzen.xinescreen = 0;
+ 	dzen.tsupdate = 0;
+ 	dzen.line_height = 0;
+ 	dzen.title_win.expand = noexpand;
+ 
+-	/* Connect to X server */
+ 	x_connect();
+-	x_read_resources();
++#else
++	/* if --profile MUSIC is given : profile=MUSIC; profile_full=dzen2.MUSIC
++	   else profile=\0; profile_full=dzen2
++	*/
++	char profile[20];
++	profile[0] = '\0';
++	//1st pass looking for --profile option, it may be overriden by cmdline args
++	for(i = 1; i < argc; i++) {
++	  if(!strncmp(argv[i], "--profile", 10) && ++i < argc && strlen(argv[i]) < 20) {
++	    strncpy(profile, argv[i], 20);
++	    break;
++	  }
++	}
+ 
++	/* because when copying _myinit struct back in dzen
++	   all is reseted so initial Display/Screen calls
++	   use those temporary variables */
++	Display *tmpdpy;
++	Screen *tmpscreen;
++	_myinit myinit;
++	Widget widget;
++
++	XtToolkitInitialize();
++	XtAppContext appContext = XtCreateApplicationContext();
++	// TODO: use XtSetTypeConverter
++	XtAddConverter( XtRString, XtRJustify, XmuCvtStringToJustify,
++			(XtConvertArgList)NULL, (Cardinal)0 );
++	XtAddConverter( XtRString, XtRLong, XmuCvtStringToLong,
++			(XtConvertArgList)NULL, (Cardinal)0 );
++
++	/* TODO: title widget & slave widget ? */
++	if(profile[0] == '\0')
++	  widget = XtOpenApplication(&appContext, "dzen2", optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
++	else
++	  widget = XtOpenApplication(&appContext, profile, optionsSpec, XtNumber(optionsSpec), &argc, argv, fallbackResources, sessionShellWidgetClass, NULL, 0);
++
++	tmpdpy = XtDisplayOfObject(widget);
++	if(!tmpdpy)
++	  eprint("dzen: cannot open display\n");
++	tmpscreen = XtScreen(widget);
++
++	XtGetApplicationResources(widget, &myinit, appResList, XtNumber(appResList), NULL, 0);
++	XtGetApplicationResources(widget, &dzen, dzenResList, XtNumber(dzenResList), NULL, 0);
++	XtGetSubresources(widget, &dzen.slave_win, "slave", "Slave", slaveResList, XtNumber(slaveResList), NULL, 0);
++	XtGetSubresources(widget, &dzen.title_win, "title", "Title", titleResList, XtNumber(titleResList), NULL, 0);
++
++	dzen.dpy = tmpdpy;
++	dzen.screen = tmpscreen;
++
++	use_ewmh_dock = myinit.dock;
++	action_string = myinit.event;
++	fnpre = myinit.fnpre;
++#endif
++	dzen.running = True;
++
+ 	/* cmdline args */
+-	for(i = 1; i < argc; i++)
++	for(i = 1; i < argc; i++) {
++#ifndef DZEN_XRESOURCES
+ 		if(!strncmp(argv[i], "-l", 3)){
+ 			if(++i < argc) {
+ 				dzen.slave_win.max_lines = atoi(argv[i]);
+ 				if(dzen.slave_win.max_lines)
+ 					init_input_buffer();
+ 			}
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-geometry", 10)) {
+-			if(++i < argc) {
+-				int t;
+-				int tx, ty;
+-				unsigned int tw, th;
+-
+-				t = XParseGeometry(argv[i], &tx, &ty, &tw, &th);
+-
+-				if(t & XValue)
+-					dzen.title_win.x = tx;
+-				if(t & YValue) {
+-					dzen.title_win.y = ty;
+-					if(!ty && (t & YNegative))
+-						/* -0 != +0 */
+-						dzen.title_win.y = -1;
++	  if(!strncmp(argv[i], "-geometry", 10)) {
++	    if(++i < argc)
++	      parse_geo(argv[i]);
++	    continue;
+ 				}
+-				if(t & WidthValue)
+-					dzen.title_win.width = (signed int) tw;
+-				if(t & HeightValue)
+-					dzen.line_height = (signed int) th;
+-			}
+-		}
+-		else if(!strncmp(argv[i], "-u", 3)){
++	  if(!strncmp(argv[i], "-u", 3)){
+ 			dzen.tsupdate = True;
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-expand", 8)){
++#endif
++	  if(!strncmp(argv[i], "-expand", 8)){
+ 			if(++i < argc) {
++	      if(strlen(argv[i]) == 1)
+ 				switch(argv[i][0]){
+ 					case 'l':
+ 						dzen.title_win.expand = left;
+@@ -961,15 +1003,31 @@
+ 					case 'c':
+ 						dzen.title_win.expand = both;
+ 						break;
++		case 'b':
++		  dzen.title_win.expand = both;
++		  break;
+ 					case 'r':
+ 						dzen.title_win.expand = right;
+ 						break;
+ 					default:
+ 						dzen.title_win.expand = noexpand;
+ 				}
++	      if(!strncmp(argv[i], "left", 5)||!strncmp(argv[i], "Left", 5))
++		dzen.title_win.expand = left;
++	      else if(!strncmp(argv[i], "right", 6)||!strncmp(argv[i], "Right", 6))
++		dzen.title_win.expand = right;
++	      else if(!strncmp(argv[i], "both", 5)||!strncmp(argv[i], "Both", 5) ||
++		      !strncmp(argv[i], "center", 7)||!strncmp(argv[i], "Center", 7))
++		dzen.title_win.expand = both;
++	      else
++		dzen.title_win.expand = noexpand;
+ 			}
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-p", 3)) {
++
++	  /* because XrmOptionDescRec can't handle an option (with OR without) argument
++	     so would fail if argv[i+1] is NOT a number but would remove it from *argv[] anyway */
++	  if(!strncmp(argv[i], "-p", 3)) {
+ 			dzen.ispersistent = True;
+ 			if (i+1 < argc) {
+ 				dzen.timeout = strtoul(argv[i+1], &endptr, 10);
+@@ -978,73 +1036,84 @@
+ 				else
+ 					i++;
+ 			}
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-ta", 4)) {
++#ifndef DZEN_XRESOURCES
++	  if(!strncmp(argv[i], "-ta", 4)) {
+ 			if(++i < argc) dzen.title_win.alignment = alignment_from_char(argv[i][0]);
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-sa", 4)) {
++	  if(!strncmp(argv[i], "-sa", 4)) {
+ 			if(++i < argc) dzen.slave_win.alignment = alignment_from_char(argv[i][0]);
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-m", 3)) {
++#endif
++	  if(!strncmp(argv[i], "-m", 3)) {
++	    if(++i < argc) {
+ 			dzen.slave_win.ismenu = True;
+-			if(i+1 < argc) {
+-				if( argv[i+1][0] == 'v') {
+-					++i;
+-					break;
++	      if(strlen(argv[i]) == 1) {
++		if(argv[i][0] == 'h')
++		  dzen.slave_win.ishmenu = True;
+ 				}
+-				dzen.slave_win.ishmenu = (argv[i+1][0] == 'h') ? ++i, True : False;
++	      else if(!strncmp(argv[i], "horizontal", 11)||!strncmp(argv[i], "Horizontal", 11))
++		dzen.slave_win.ishmenu = True;
++	      else i--;
+ 			}
++	    continue;
+ 		}
+-		else if(!strncmp(argv[i], "-fn", 4)) {
+-			if(++i < argc) dzen.fnt = argv[i];
++#ifndef DZEN_XRESOURCES
++	  if(!strncmp(argv[i], "-fn", 4)) {
++	    if(++i < argc) dzen.fnt = argv[i]; continue;
+ 		}
+-		else if(!strncmp(argv[i], "-e", 3)) {
+-			if(++i < argc) action_string = argv[i];
++	   if(!strncmp(argv[i], "-e", 3)) {
++	    if(++i < argc) action_string = argv[i]; continue;
+ 		}
+-		else if(!strncmp(argv[i], "-title-name", 12)) {
+-			if(++i < argc) dzen.title_win.name = argv[i];
++	   if(!strncmp(argv[i], "-title-name", 12)) {
++	    if(++i < argc) dzen.title_win.name = argv[i]; continue;
+ 		}
+-		else if(!strncmp(argv[i], "-slave-name", 12)) {
+-			if(++i < argc) dzen.slave_win.name = argv[i];
++	   if(!strncmp(argv[i], "-slave-name", 12)) {
++	    if(++i < argc) dzen.slave_win.name = argv[i]; continue;
+ 		}
+-		else if(!strncmp(argv[i], "-bg", 4)) {
+-			if(++i < argc) dzen.bg = argv[i];
++	   if(!strncmp(argv[i], "-bg", 4)) {
++	    if(++i < argc) dzen.bg = argv[i]; continue;
+ 		}
+-		else if(!strncmp(argv[i], "-fg", 4)) {
+-			if(++i < argc) dzen.fg = argv[i];
++	   if(!strncmp(argv[i], "-fg", 4)) {
++	    if(++i < argc) dzen.fg = argv[i]; continue;
+ 		}
+-		else if(!strncmp(argv[i], "-x", 3)) {
+-			if(++i < argc) dzen.title_win.x = dzen.slave_win.x = atoi(argv[i]);
++	   if(!strncmp(argv[i], "-x", 3)) {
++	    if(++i < argc) dzen.title_win.x = dzen.slave_win.x = atoi(argv[i]); continue;
+ 		}
+-		else if(!strncmp(argv[i], "-y", 3)) {
+-			if(++i < argc) dzen.title_win.y = atoi(argv[i]);
++	   if(!strncmp(argv[i], "-y", 3)) {
++	    if(++i < argc) dzen.title_win.y = atoi(argv[i]); continue;
+ 		}
+-		else if(!strncmp(argv[i], "-w", 3)) {
+-			if(++i < argc) dzen.slave_win.width = atoi(argv[i]);
++	   if(!strncmp(argv[i], "-w", 3)) {
++	    if(++i < argc) dzen.slave_win.width = atoi(argv[i]); continue;
+ 		}
+-		else if(!strncmp(argv[i], "-h", 3)) {
+-			if(++i < argc) dzen.line_height= atoi(argv[i]);
++	   if(!strncmp(argv[i], "-h", 3)) {
++	    if(++i < argc) dzen.line_height= atoi(argv[i]); continue;
+ 		}
+-		else if(!strncmp(argv[i], "-tw", 4)) {
+-			if(++i < argc) dzen.title_win.width = atoi(argv[i]);
++	   if(!strncmp(argv[i], "-tw", 4)) {
++	    if(++i < argc) dzen.title_win.width = atoi(argv[i]); continue;
+ 		}
+-		else if(!strncmp(argv[i], "-fn-preload", 12)) {
++	   if(!strncmp(argv[i], "-fn-preload", 12)) {
+ 			if(++i < argc) {
+ 				fnpre = estrdup(argv[i]);
+ 			}
++	    continue;
+ 		}
+ #ifdef DZEN_XINERAMA
+-		else if(!strncmp(argv[i], "-xs", 4)) {
+-			if(++i < argc) dzen.xinescreen = atoi(argv[i]);
++	   if(!strncmp(argv[i], "-xs", 4)) {
++	     if(++i < argc) dzen.xinescreen = atoi(argv[i]); continue;
+ 		}
+ #endif
+-		else if(!strncmp(argv[i], "-dock", 6))
+-			use_ewmh_dock = 1;
+-		else if(!strncmp(argv[i], "-v", 3)) {
++	   if(!strncmp(argv[i], "-dock", 6)) {
++	     use_ewmh_dock = 1; continue;
++	   }
++#endif
++	  if(!strncmp(argv[i], "--version", 10) || !strncmp(argv[i], "-v", 3)) {
+ 			printf("dzen-"VERSION", (C)opyright 2007-2009 Robert Manea\n");
+-			printf(
+-			"Enabled optional features: "
+-#ifdef DZEN_XMP
++	    printf("Enabled optional features: "
++#ifdef DZEN_XPM
+ 			" XPM "
+ #endif
+ #ifdef DZEN_XFT
+@@ -1053,21 +1122,55 @@
+ #ifdef DZEN_XINERAMA
+ 			" XINERAMA "
+ #endif
++#ifdef DZEN_XRESOURCES
++		   " XRESOURCES "
++#endif
+ 			"\n"
+ 			);
+ 			return EXIT_SUCCESS;
+ 		}
+-		else
+-			eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
+-                   "             [-x <pixel>] [-y <pixel>] [-w <pixel>] [-h <pixel>] [-tw <pixel>] [-u]\n"
+-				   "             [-e <string>] [-l <lines>]  [-fn <font>] [-bg <color>] [-fg <color>]\n"
+-				   "             [-geometry <geometry string>] [-expand <left|right>] [-dock]\n"
+-				   "             [-title-name <string>] [-slave-name <string>]\n"
+-#ifdef DZEN_XINERAMA
+-				   "             [-xs <screen>]\n"
++	  if(!strncmp(argv[i], "--profile", 10)) {
++	    i++; continue;
++	  }
++	  /* TODO: --dump-config, so it can be used by script to
++	     know before which, font, color, ... will be used for
++	     eg, calibrate or color other components */
++	  if(!strncmp(argv[i], "--help", 7) || !strncmp(argv[i], "-h", 3)) {
++	    printf("usage: dzen2\n");
++	    int i;
++	    for (i = 0; help_list[i] != NULL; i++)
++	      printf("\t%s\n",help_list[i]);
++	    return EXIT_SUCCESS;		  
++	  }
++	  eprint("Unknown option: '%s'\n",argv[i]);
++	}
++
++	/* here are postprocessed datas grabbed by XGetApplicationResources instead of command line */
++#ifdef DZEN_XRESOURCES
++	if(dzen.slave_win.max_lines)
++	  init_input_buffer();
++	/* because the abscissa resource is a slave attribute */
++	dzen.title_win.x = dzen.slave_win.x;
++	if(dzen.slave_win.ishmenu == True && dzen.slave_win.ismenu == False)
++	  eprint("'ishmenu' value depends on 'ismenu' being set to 'true'\n");
++
++	/* philosphical choice : */
++	/* careful */
++	if(dzen.title_win.expand != XtJustifyCenter && myinit.expand == False)
++	  eprint("'title.expand-dir' value [%d] depends on 'expand' value [%s] being set to 'true'\n", dzen.title_win.expand, myinit.expand ? "True" : "False");
++	/* or positivist */
++	if(myinit.expand == False)
++	  dzen.title_win.expand = noexpand;
++
++
++	if(strncmp(myinit.geometry, "0x0+0+0", 8))
++	  parse_geo(myinit.geometry);
++
++	/*
++	  TODO : do some philosophical stuff again
++	  with timeout/ispersistent default
++	*/
+ #endif
+-				  );
+-
+ 	if(dzen.tsupdate && !dzen.slave_win.max_lines)
+ 		dzen.tsupdate = False;
+ 
+@@ -1149,4 +1252,3 @@
+ 
+ 	return EXIT_SUCCESS;
+ }
+-
+Index: config.mk
+===================================================================
+--- config.mk	(révision 267)
++++ config.mk	(copie de travail)
+@@ -11,51 +11,39 @@
+ X11LIB = /usr/X11R6/lib
+ INCS = -I. -I/usr/include -I${X11INC}
+ 
++LIBS = -L/usr/lib -lc -L${X11LIB}
++CFLAGS = ${INCS} -DVERSION=\"${VERSION}\"
++PKG = x11
++
+ # Configure the features you want to be supported
+-# Only one of the following options has to be uncommented,
+-# all others must be commented!
+-#
+ # Uncomment: Remove # from the beginning of respective lines
+ # Comment  : Add # to the beginning of the respective lines
+ 
+-## Option 1: No Xinerama no XPM no XFT
+-#LIBS = -L/usr/lib -lc -L${X11LIB} -lX11
+-#CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\"
++## with DEBUG (TODO: make Makefile strip optionnal)
++# CFLAGS += -DDZEN_DEBUG -Wall -ggdb
+ 
++## Handle .Xdefaults settings (need libXt & libXmu)
++# PKG += xmu xt
++# CFLAGS += -DDZEN_XRESOURCES
+ 
+-## Option 2: No Xinerama with XPM
+-#LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -lXpm
+-#CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\" -DDZEN_XPM
++#TODO: echo -e "a\n\nb"|./dzen2 -expand right -p 5
+ 
++## with XFT
++#PKG += xft
++#CFLAGS += -DDZEN_XFT
+ 
+-# Option 3: With Xinerama no XPM
+-#LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -lXinerama
+-#CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\" -DDZEN_XINERAMA
++## with XPM
++#PKG += xpm
++#CFLAGS += -DDZEN_XPM
+ 
++## with XINERAMA
++#PKG += xinerama
++#CFLAGS += -DDZEN_XINERAMA
+ 
+-## Option 4: With Xinerama and XPM
+-#LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -lXinerama -lXpm
+-#CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\" -DDZEN_XINERAMA -DDZEN_XPM
+-
+-
+-## Option 5: With XFT
+-LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 `pkg-config --libs xft`
+-CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\" -DDZEN_XFT `pkg-config --cflags xft`
+-
+-
+-## Option 6: With XPM and XFT
+-#LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -lXpm `pkg-config --libs xft`
+-#CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\" -DDZEN_XPM -DDZEN_XFT `pkg-config --cflags xft`
+-
+-
+-## Option 7: With Xinerama and XPM and XFT
+-#LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -lXinerama -lXpm `pkg-config --libs xft`
+-#CFLAGS = -Wall -Os ${INCS} -DVERSION=\"${VERSION}\" -DDZEN_XINERAMA -DDZEN_XPM -DDZEN_XFT `pkg-config --cflags xft`
+-
+-
+-
+ # END of feature configuration
+ 
++LIBS += `pkg-config --libs ${PKG}`
++CFLAGS += `pkg-config --cflags ${PKG}`
+ 
+ LDFLAGS = ${LIBS}
+ 
+Index: Makefile
+===================================================================
+--- Makefile	(révision 267)
++++ Makefile	(copie de travail)
+@@ -19,7 +19,7 @@
+ 	@echo CC $<
+ 	@${CC} -c ${CFLAGS} $<
+ 
+-${OBJ}: dzen.h action.h config.mk
++${OBJ}: dzen.h action.h resources.h config.mk
+ 
+ dzen2: ${OBJ}
+ 	@echo LD $@
+Index: draw.c
+===================================================================
+--- draw.c	(révision 267)
++++ draw.c	(copie de travail)
+@@ -112,11 +112,28 @@
+ 	return color.pixel;
+ }
+ 
++void setextents(Fnt *font) {
++  int i, n;
++  XFontSetExtents *font_extents;
++  XFontStruct **xfonts;
++  char **font_names;
++  font->ascent = font->descent = 0;
++  font_extents = XExtentsOfFontSet(font->set);
++  n = XFontsOfFontSet(font->set, &xfonts, &font_names);
++  for(i = 0, font->ascent = 0, font->descent = 0; i < n; i++) {
++    if(font->ascent < (*xfonts)->ascent)
++      font->ascent = (*xfonts)->ascent;
++    if(font->descent < (*xfonts)->descent)
++      font->descent = (*xfonts)->descent;
++    xfonts++;
++  }
++}
++
+ void
+ setfont(const char *fontstr) {
+ #ifndef DZEN_XFT
+ 	char *def, **missing;
+-	int i, n;
++       int n;
+ 
+ 	missing = NULL;
+ 	if(dzen.font.set)
+@@ -126,21 +143,8 @@
+ 	if(missing)
+ 		XFreeStringList(missing);
+ 
+-	if(dzen.font.set) {
+-		XFontSetExtents *font_extents;
+-		XFontStruct **xfonts;
+-		char **font_names;
+-		dzen.font.ascent = dzen.font.descent = 0;
+-		font_extents = XExtentsOfFontSet(dzen.font.set);
+-		n = XFontsOfFontSet(dzen.font.set, &xfonts, &font_names);
+-		for(i = 0, dzen.font.ascent = 0, dzen.font.descent = 0; i < n; i++) {
+-			if(dzen.font.ascent < (*xfonts)->ascent)
+-				dzen.font.ascent = (*xfonts)->ascent;
+-			if(dzen.font.descent < (*xfonts)->descent)
+-				dzen.font.descent = (*xfonts)->descent;
+-			xfonts++;
+-		}
+-	}
++  if(dzen.font.set)
++    setextents(&(dzen.font));
+ 	else {
+ 		if(dzen.font.xfont)
+ 			XFreeFont(dzen.dpy, dzen.font.xfont);
+@@ -152,9 +156,9 @@
+ 	}
+ 	dzen.font.height = dzen.font.ascent + dzen.font.descent;
+ #else
+-	dzen.font.xftfont = XftFontOpenXlfd(dzen.dpy, dzen.screen, fontstr);
++  dzen.font.xftfont = XftFontOpenXlfd(dzen.dpy, DefaultScreen(dzen.dpy), fontstr);
+ 	if(!dzen.font.xftfont)
+-	   dzen.font.xftfont = XftFontOpenName(dzen.dpy, dzen.screen, fontstr);
++    dzen.font.xftfont = XftFontOpenName(dzen.dpy, DefaultScreen(dzen.dpy), fontstr);
+ 	if(!dzen.font.xftfont)
+ 	   eprint("error, cannot load font: '%s'\n", fontstr);
+ 	dzen.font.extents = malloc(sizeof(XGlyphInfo));
+@@ -419,6 +423,7 @@
+ 		xorig = 0;
+ 
+ 
++#ifndef DZEN_XRESOURCES
+ 		if(lnr != -1) {
+ 			pm = XCreatePixmap(dzen.dpy, RootWindow(dzen.dpy, DefaultScreen(dzen.dpy)), dzen.slave_win.width,
+ 					dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+@@ -428,7 +433,19 @@
+ 					dzen.line_height, DefaultDepth(dzen.dpy, dzen.screen));
+ 			sens_areas_cnt = 0;
+ 		}
++#else
++    if(lnr != -1) {
++      pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.slave_win.width,
++			 dzen.line_height, DefaultDepthOfScreen(dzen.screen));
++    }
++    else {
++      pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.title_win.width,
++			 dzen.line_height, DefaultDepthOfScreen(dzen.screen));
++      sens_areas_cnt = 0;
++    }
+ 
++#endif
++
+ #ifdef DZEN_XFT
+ 		xftd = XftDrawCreate(dzen.dpy, pm, DefaultVisual(dzen.dpy, dzen.screen), 
+ 				DefaultColormap(dzen.dpy, dzen.screen));

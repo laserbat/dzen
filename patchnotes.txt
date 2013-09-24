@@ -1,0 +1,64 @@
+- README updated
+- optimisation of config.mk :
+  - DZEN_DEBUG as been used to include "debug.c"
+  which contained some useful functions, like printDzen(Dzen *),
+  ... (not a big deal but can be emailed also)
+
+- removed x_read_resources() function replaced by the Xt* functions which
+  used whether args,argv or a temporary struct : _myinit
+
+- corrected a #ifdef DZEN_XPM in the usage string
+
+- moved part of setfont in setextents to :
+  - avoid redundancy
+  - use the XFontSet dzen.font directly from Xresource
+  without going through char *dzen.fnt
+
+- moved so XParseGeo stuff in one function as it may now
+  be reused twice.
+
+- the option list is in resources.h and printed one
+  per line so _get_longopt bash completion is possible
+
+- differenciate printing help (--help) from unknown
+  option
+
+- used 'continue;' instead of 'else if' in the main option
+  parsing loop to ease the #idef use and put the whole
+  between brackets
+
+- added some other values detected to -m (menu) and -expand
+
+- added --profile support #ifdef DZEN_XRESOURCES :
+  - use Pixel instead of char* for dzen.[fb]g
+  - conditionnaly use getcolor() for settings as libXt directly
+    throw a Pixel in the dzen struct
+  - used a Screen * for dzen.screen because that's the Xt way
+    and it mostly avoid keeping the dpy around in the rest of the code
+  - defined some macros to wrap X*function(dpy,screen) to X*OfScreen(screen)
+  - changed the -expand enum and ALIGN* macros to match XtJustify* definition
+Last note :
+WM not using libXt : stumpwm
+WM not using libXmu (used for alignment conversion):
+aewm++, blackbox, echinus, ion, jwm
+
+
+
+mkconfig.
+## Handle .Xdefaults settings (need libXt & libXmu)
+PKG += xmu xt
+CFLAGS += -DDZEN_XRESOURCES
+#TODO: echo -e "a\n\nb"|./dzen2 -expand right -p 5
+with X RESSOURCES
+
+itoa, why ?
+ C++ version 0.4 char* style "itoa":
+ 
+in dzen.h, in ifdef XRES: {{{
+#ifdef DZEN_XFT
+char* itoa(int value, char* result, int base);
+#endif
+}}}
+
+
+Raphaël Droz, raphael.droz@gmail.com, 2009/11/12
