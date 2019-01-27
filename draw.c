@@ -19,7 +19,7 @@
 #define MAX_ICON_CACHE 32
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
-#define LNR2WINDOW(lnr) lnr==-1?0:1
+#define LNR2WINDOW(lnr) (lnr==-1?0:1)
 
 typedef struct ICON_C {
 	char name[ARGLEN];
