@@ -1,0 +1,21 @@
+Issues:
+    - https://github.com/robm/dzen/issues/12 (patch in waybackmachine)
+    - https://github.com/robm/dzen/issues/21 (needs to be reproduced)
+    - https://github.com/robm/dzen/issues/36
+    - https://github.com/robm/dzen/issues/34
+    - https://github.com/robm/dzen/issues/39
+    - https://github.com/robm/dzen/issues/46
+    - https://github.com/robm/dzen/issues/47
+    - Crash on ^exit()
+
+Enhancements
+    - Documentation
+    - Cleanup
+    - XResources
+    - Xft support in textwidth
+    - https://github.com/robm/dzen/issues/32
+    - https://github.com/robm/dzen/issues/26
+    - https://github.com/robm/dzen/issues/11
+    - https://github.com/robm/dzen/issues/22
+    - https://github.com/robm/dzen/issues/42
+    - https://github.com/robm/dzen/issues/43
