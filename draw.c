@@ -117,11 +117,9 @@ getcolor(const char *colstr) {
 void
 setextents(Fnt *font) {
     int i, n;
-    XFontSetExtents *font_extents;
     XFontStruct **xfonts;
     char **font_names;
     font->ascent = font->descent = 0;
-    font_extents = XExtentsOfFontSet(font->set);
     n = XFontsOfFontSet(font->set, &xfonts, &font_names);
     for(i = 0, font->ascent = 0, font->descent = 0; i < n; i++) {
         if(font->ascent < (*xfonts)->ascent)
@@ -432,10 +430,12 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
         if(lnr != -1) {
             pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.slave_win.width,
                                dzen.line_height, DefaultDepthOfScreen(dzen.screen));
+            window_sens[SLAVEWINDOW].sens_areas_cnt = 0;
         }
         else {
             pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.title_win.width,
                                dzen.line_height, DefaultDepthOfScreen(dzen.screen));
+            window_sens[TOPWINDOW].sens_areas_cnt = 0;
         }
 
 #ifdef DZEN_XFT
@@ -505,7 +505,7 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
                 pos_is_fixed=0;
 
             if(nodraw) {
-                strcat(rbuf, lbuf);
+                strncat(rbuf, lbuf, MAX_LINE_LEN);
             }
             else {
                 if(t != -1 && tval) {
