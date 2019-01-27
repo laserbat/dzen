@@ -9,8 +9,8 @@ INCS = -I. -I${X11INC}
 
 X11LIB = /usr/X11R6/lib
 
-CFLAGS += -Os ${INCS} 
-LDFLAGS = ${LIBS}
+CFLAGS += -O2 ${INCS} 
+LDFLAGS += ${LIBS}
 
 # compiler and linker
 CC ?= gcc
