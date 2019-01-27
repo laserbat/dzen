@@ -11,11 +11,11 @@ X11INC = /usr/X11R6/include
 X11LIB = /usr/X11R6/lib
 INCS = -I. -I/usr/include -I${X11INC}
 
-LIBS = -L/usr/lib -lc -L${X11LIB}
+LIBS = -L${X11LIB}
 
 # Solaris, uncomment for Solaris
 #CFLAGS = -fast -xtarget=ultra
-CFLAGS = ${INCS} -DVERSION=\"${VERSION}\"
+CFLAGS += ${INCS} -DVERSION=\"${VERSION}\"
 PKG = x11
 
 # Debugging
@@ -42,8 +42,8 @@ PKG = x11
 LIBS += `pkg-config --libs ${PKG}`
 CFLAGS += `pkg-config --cflags ${PKG}`
 
-LDFLAGS = ${LIBS}
+LDFLAGS += ${LIBS}
 
 # compiler and linker
-CC = gcc
+CC ?= gcc
 LD = ${CC}
