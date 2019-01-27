@@ -1,4 +1,4 @@
-/* 
+/*
  * (C)opyright 2007-2009 Robert Manea <rob dot manea at gmail dot com>
  * See LICENSE file for license details.
  *
@@ -25,11 +25,11 @@
 #define ALIGNRIGHT  XtJustifyRight
 // used by XtOffset to store values not part of the dzen struct
 typedef struct {
-  String geometry;
-  Boolean dock;
-  String event;
-  String fnpre;
-  Boolean expand;
+    String geometry;
+    Boolean dock;
+    String event;
+    String fnpre;
+    Boolean expand;
 } _myinit;
 
 #else
@@ -80,39 +80,39 @@ typedef struct SW SWIN;
 typedef struct _Sline Sline;
 
 struct Geometry {
-	short x, y;
-	unsigned short title_width, width, height;
-	unsigned char relative_flags;
+    short x, y;
+    unsigned short title_width, width, height;
+    unsigned char relative_flags;
 };
 
 struct Fnt {
-	XFontStruct *xfont;
-	XFontSet set;
-	int ascent;
-	int descent;
-	int height;
+    XFontStruct *xfont;
+    XFontSet set;
+    int ascent;
+    int descent;
+    int height;
 #ifdef DZEN_XFT
-	XftFont *xftfont;
-	XGlyphInfo *extents;
-	int width;
+    XftFont *xftfont;
+    XGlyphInfo *extents;
+    int width;
 #endif
 };
 
 /* clickable areas */
 typedef struct _CLICK_A {
     int active;
-	int button;
-	int start_x;
-	int end_x;
-	int start_y;
-	int end_y;
-	Window win;		//(line)window to which the action is attached
-	char cmd[1024];
+    int button;
+    int start_x;
+    int end_x;
+    int start_y;
+    int end_y;
+    Window win;		//(line)window to which the action is attached
+    char cmd[1024];
 } click_a;
 
 typedef struct _SENS_PER_WINDOW {
-	click_a sens_areas[MAX_CLICKABLE_AREAS];
-	int sens_areas_cnt;
+    click_a sens_areas[MAX_CLICKABLE_AREAS];
+    int sens_areas_cnt;
 } sens_w;
 
 //0: top window, 1: slave window
@@ -122,78 +122,78 @@ extern Colormap cmap;
 
 /* title window */
 struct TW {
-	int x, y, width, height;
+    int x, y, width, height;
 
-	char *name;
-	Window win;
-	Drawable drawable;
-	char alignment;
-	int expand;
-	int x_right_corner;
-	Bool ishidden;
+    char *name;
+    Window win;
+    Drawable drawable;
+    char alignment;
+    int expand;
+    int x_right_corner;
+    Bool ishidden;
 };
 
 /* slave window */
 struct SW {
-	int x, y, width, height;
+    int x, y, width, height;
 
-	char *name;
-	Window win;
-	Window *line;
-	Drawable *drawable;
+    char *name;
+    Window win;
+    Window *line;
+    Drawable *drawable;
 
-	/* input buffer */
-	char **tbuf; 
-	int tsize;
-	int tcnt;
-	/* line fg colors */
-	unsigned long *tcol;
+    /* input buffer */
+    char **tbuf;
+    int tsize;
+    int tcnt;
+    /* line fg colors */
+    unsigned long *tcol;
 
-	int max_lines;
-	int first_line_vis;
-	int last_line_vis;
-	int sel_line;
+    int max_lines;
+    int first_line_vis;
+    int last_line_vis;
+    int sel_line;
 
-	char alignment;
-	Bool ismenu;
-	Bool ishmenu;
-	Bool issticky;
-	Bool ismapped;
+    char alignment;
+    Bool ismenu;
+    Bool ishmenu;
+    Bool issticky;
+    Bool ismapped;
 };
 
 struct DZEN {
-	int x, y, w, h;
-	Bool running;
-	unsigned long norm[ColLast];
+    int x, y, w, h;
+    Bool running;
+    unsigned long norm[ColLast];
 
-	TWIN title_win;
-	SWIN slave_win;
+    TWIN title_win;
+    SWIN slave_win;
 
-	/* sensitive areas */
-	Window sa_win;
+    /* sensitive areas */
+    Window sa_win;
 
-	const char *fnt;
-        XColor bg, fg;
-	int line_height;
+    const char *fnt;
+    XColor bg, fg;
+    int line_height;
 
-	Display *dpy;
-	Screen *screen;
-	unsigned int depth;
+    Display *dpy;
+    Screen *screen;
+    unsigned int depth;
 
-	Visual *visual;
-	GC gc, rgc, tgc;
-	Fnt font;
-	Fnt fnpl[64];
+    Visual *visual;
+    GC gc, rgc, tgc;
+    Fnt font;
+    Fnt fnpl[64];
 
-	Bool ispersistent;
-	Bool tsupdate;
-	Bool colorize;
-	unsigned long timeout;
-	long cur_line;
-	int ret_val;
+    Bool ispersistent;
+    Bool tsupdate;
+    Bool colorize;
+    unsigned long timeout;
+    long cur_line;
+    int ret_val;
 
-	/* should always be 0 if DZEN_XINERAMA not defined */
-	int xinescreen;
+    /* should always be 0 if DZEN_XINERAMA not defined */
+    int xinescreen;
 };
 
 extern Dzen dzen;
@@ -203,14 +203,14 @@ void x_draw_body(void);
 
 /* draw.c */
 extern void drawtext(const char *text,
-		int reverse,
-		int line,
-		int align);
-extern char * parse_line(const char * text, 
-		int linenr, 
-		int align, 
-		int reverse, 
-		int nodraw);
+                     int reverse,
+                     int line,
+                     int align);
+extern char * parse_line(const char * text,
+                         int linenr,
+                         int align,
+                         int reverse,
+                         int nodraw);
 extern long getcolor(const char *colstr);		/* returns color of colstr */
 extern void setfont(const char *fontstr);		/* sets global font */
 void setextents(Fnt *font);				/* set font extents */
