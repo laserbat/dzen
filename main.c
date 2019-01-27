@@ -910,25 +910,24 @@ init_input_buffer(void) {
     dzen.slave_win.tbuf = emalloc(dzen.slave_win.tsize * sizeof(char *));
 }
 
-void parse_geo(char *geo) {
+void parse_geo(Geometry *geometry, char *geo) {
     int t, tx, ty;
     unsigned int tw, th;
 
     t = XParseGeometry(geo, &tx, &ty, &tw, &th);
 
     if(t & XValue)
-        geometry.x = tx;
+        geometry->x = tx;
     if(t & YValue) {
-        dzen.title_win.y = ty;
-        geometry.y = ty;
+        geometry->y = ty;
         if(!ty && (t & YNegative))
             /* -0 != +0 */
-            geometry.y = -1;
+            geometry->y = -1;
     }
     if(t & WidthValue)
-        geometry.title_width = tw;
+        geometry->title_width = tw;
     if(t & HeightValue)
-        geometry.height = th;
+        geometry->height = th;
 }
 
 int
@@ -1034,7 +1033,7 @@ main(int argc, char *argv[]) {
         }
         if(!strncmp(argv[i], "-geometry", 10)) {
             if(++i < argc)
-                parse_geo(argv[i]);
+                parse_geo(&geometry, argv[i]);
             continue;
         }
         if(!strncmp(argv[i], "-u", 3)) {
@@ -1162,138 +1161,137 @@ main(int argc, char *argv[]) {
             }
             continue;
         }
-    }
-    if(!strncmp(argv[i], "-fn-preload", 12)) {
-        if(++i < argc) {
-            fnpre = estrdup(argv[i]);
+        if(!strncmp(argv[i], "-fn-preload", 12)) {
+            if(++i < argc) {
+                fnpre = estrdup(argv[i]);
+            }
+            continue;
         }
-        continue;
-    }
 
 #ifdef DZEN_XINERAMA
-    if(!strncmp(argv[i], "-xs", 4)) {
-        if(++i < argc) dzen.xinescreen = atoi(argv[i]);
-        continue;
-    }
+        if(!strncmp(argv[i], "-xs", 4)) {
+            if(++i < argc) dzen.xinescreen = atoi(argv[i]);
+            continue;
+        }
 #endif
-    if(!strncmp(argv[i], "-dock", 6)) {
-        use_ewmh_dock = 1;
-        continue;
-    }
-    if(!strncmp(argv[i], "-v", 3)) {
-        printf("dzen-"VERSION", (C)opyright 2007-2009 Robert Manea\n");
-        printf(
-            "Enabled optional features: "
+        if(!strncmp(argv[i], "-dock", 6)) {
+            use_ewmh_dock = 1;
+            continue;
+        }
+        if(!strncmp(argv[i], "-v", 3)) {
+            printf("dzen-"VERSION", (C)opyright 2007-2009 Robert Manea\n");
+            printf(
+                "Enabled optional features: "
 #ifdef DZEN_XPM
-            "XPM "
+                "XPM "
 #endif
 #ifdef DZEN_XFT
-            "XFT"
+                "XFT"
 #endif
 #ifdef DZEN_XINERAMA
-            "XINERAMA "
+                "XINERAMA "
 #endif
-            "\n"
-        );
-        return EXIT_SUCCESS;
-    }
-    if(!strncmp(argv[i], "--profile", 10)) {
-        i++;
-        continue;
-    }
+                "\n"
+            );
+            return EXIT_SUCCESS;
+        }
+        if(!strncmp(argv[i], "--profile", 10)) {
+            i++;
+            continue;
+        }
 
-    eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
-           "             [-x <pixel|percent%>] [-y <pixel|percent%>] [-w <pixel|percent%>]\n"
-           "             [-h <pixel|percent%>] [-tw <pixel|percent%>] [-u]\n"
-           "             [-e <string>] [-l <lines>] [-fn <font>] [-bg <color>] [-fg <color>]\n"
-           "             [-geometry <geometry string>] [-expand <left|right>] [-dock]\n"
-           "             [-title-name <string>] [-slave-name <string>]\n"
+        eprint("usage: dzen2 [-v] [-p [seconds]] [-m [v|h]] [-ta <l|c|r>] [-sa <l|c|r>]\n"
+               "             [-x <pixel|percent%>] [-y <pixel|percent%>] [-w <pixel|percent%>]\n"
+               "             [-h <pixel|percent%>] [-tw <pixel|percent%>] [-u]\n"
+               "             [-e <string>] [-l <lines>] [-fn <font>] [-bg <color>] [-fg <color>]\n"
+               "             [-geometry <geometry string>] [-expand <left|right>] [-dock]\n"
+               "             [-title-name <string>] [-slave-name <string>]\n"
 #ifdef DZEN_XINERAMA
-           "             [-xs <screen>]\n"
+               "             [-xs <screen>]\n"
 #endif
-          );
-}
-
-if(dzen.tsupdate && !dzen.slave_win.max_lines)
-    dzen.tsupdate = False;
-
-if (!geometry.title_width) {
-    geometry.title_width = geometry.width;
-    if (geometry.relative_flags & RELATIVE_WIDTH)
-        geometry.relative_flags |= RELATIVE_TITLE_WIDTH;
-}
-
-if(!setlocale(LC_ALL, "") || !XSupportsLocale())
-    puts("dzen: locale not available, expect problems with fonts.\n");
-
-if(action_string)
-    fill_ev_table(action_string);
-else {
-    if(!dzen.slave_win.max_lines) {
-        char edef[] = "button3=exit:13";
-        fill_ev_table(edef);
+              );
     }
-    else if(dzen.slave_win.ishmenu) {
-        char edef[] = "enterslave=grabkeys;leaveslave=ungrabkeys;"
-                      "button4=scrollup;button5=scrolldown;"
-                      "key_Left=scrollup;key_Right=scrolldown;"
-                      "button1=menuexec;button3=exit:13;"
-                      "key_Escape=ungrabkeys,exit";
-        fill_ev_table(edef);
+
+    if(dzen.tsupdate && !dzen.slave_win.max_lines)
+        dzen.tsupdate = False;
+
+    if (!geometry.title_width) {
+        geometry.title_width = geometry.width;
+        if (geometry.relative_flags & RELATIVE_WIDTH)
+            geometry.relative_flags |= RELATIVE_TITLE_WIDTH;
     }
+
+    if(!setlocale(LC_ALL, "") || !XSupportsLocale())
+        puts("dzen: locale not available, expect problems with fonts.\n");
+
+    if(action_string)
+        fill_ev_table(action_string);
     else {
-        char edef[]  = "entertitle=uncollapse,grabkeys;"
-                       "enterslave=grabkeys;leaveslave=collapse,ungrabkeys;"
-                       "button1=menuexec;button2=togglestick;button3=exit:13;"
-                       "button4=scrollup;button5=scrolldown;"
-                       "key_Up=scrollup;key_Down=scrolldown;"
-                       "key_Escape=ungrabkeys,exit";
-        fill_ev_table(edef);
+        if(!dzen.slave_win.max_lines) {
+            char edef[] = "button3=exit:13";
+            fill_ev_table(edef);
+        }
+        else if(dzen.slave_win.ishmenu) {
+            char edef[] = "enterslave=grabkeys;leaveslave=ungrabkeys;"
+                          "button4=scrollup;button5=scrolldown;"
+                          "key_Left=scrollup;key_Right=scrolldown;"
+                          "button1=menuexec;button3=exit:13;"
+                          "key_Escape=ungrabkeys,exit";
+            fill_ev_table(edef);
+        }
+        else {
+            char edef[]  = "entertitle=uncollapse,grabkeys;"
+                           "enterslave=grabkeys;leaveslave=collapse,ungrabkeys;"
+                           "button1=menuexec;button2=togglestick;button3=exit:13;"
+                           "button4=scrollup;button5=scrolldown;"
+                           "key_Up=scrollup;key_Down=scrolldown;"
+                           "key_Escape=ungrabkeys,exit";
+            fill_ev_table(edef);
+        }
     }
-}
 
-if((find_event(onexit) != -1)
-        && (setup_signal(SIGTERM, catch_sigterm) == SIG_ERR))
-    fprintf(stderr, "dzen: error hooking SIGTERM\n");
+    if((find_event(onexit) != -1)
+            && (setup_signal(SIGTERM, catch_sigterm) == SIG_ERR))
+        fprintf(stderr, "dzen: error hooking SIGTERM\n");
 
-if((find_event(sigusr1) != -1)
-        && (setup_signal(SIGUSR1, catch_sigusr1) == SIG_ERR))
-    fprintf(stderr, "dzen: error hooking SIGUSR1\n");
+    if((find_event(sigusr1) != -1)
+            && (setup_signal(SIGUSR1, catch_sigusr1) == SIG_ERR))
+        fprintf(stderr, "dzen: error hooking SIGUSR1\n");
 
-if((find_event(sigusr2) != -1)
-        && (setup_signal(SIGUSR2, catch_sigusr2) == SIG_ERR))
-    fprintf(stderr, "dzen: error hooking SIGUSR2\n");
+    if((find_event(sigusr2) != -1)
+            && (setup_signal(SIGUSR2, catch_sigusr2) == SIG_ERR))
+        fprintf(stderr, "dzen: error hooking SIGUSR2\n");
 
-if(setup_signal(SIGALRM, catch_alrm) == SIG_ERR)
-    fprintf(stderr, "dzen: error hooking SIGALARM\n");
+    if(setup_signal(SIGALRM, catch_alrm) == SIG_ERR)
+        fprintf(stderr, "dzen: error hooking SIGALARM\n");
 
-if(dzen.slave_win.ishmenu &&
-        !dzen.slave_win.max_lines)
-    dzen.slave_win.max_lines = 1;
+    if(dzen.slave_win.ishmenu &&
+            !dzen.slave_win.max_lines)
+        dzen.slave_win.max_lines = 1;
 
-x_create_windows(&geometry, use_ewmh_dock);
+    x_create_windows(&geometry, use_ewmh_dock);
 
-if(!dzen.slave_win.ishmenu)
-    x_map_window(dzen.title_win.win);
-else {
-    XMapRaised(dzen.dpy, dzen.slave_win.win);
-    for(i=0; i < dzen.slave_win.max_lines; i++)
-        XMapWindow(dzen.dpy, dzen.slave_win.line[i]);
-}
+    if(!dzen.slave_win.ishmenu)
+        x_map_window(dzen.title_win.win);
+    else {
+        XMapRaised(dzen.dpy, dzen.slave_win.win);
+        for(i=0; i < dzen.slave_win.max_lines; i++)
+            XMapWindow(dzen.dpy, dzen.slave_win.line[i]);
+    }
 
-if( fnpre != NULL )
-    font_preload(fnpre);
+    if( fnpre != NULL )
+        font_preload(fnpre);
 
-do_action(onstart);
+    do_action(onstart);
 
-/* main loop */
-event_loop();
+    /* main loop */
+    event_loop();
 
-do_action(onexit);
-clean_up();
+    do_action(onexit);
+    clean_up();
 
-if(dzen.ret_val)
-    return dzen.ret_val;
+    if(dzen.ret_val)
+        return dzen.ret_val;
 
-return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

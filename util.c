@@ -65,6 +65,7 @@ spawn(const char *arg) {
 }
 
 // convert XColor to XftColor
+#ifdef DZEN_XFT
 void
 XColorToXRenderColor(XColor xcol, XRenderColor *rendcol) {
     rendcol->red = xcol.red;
@@ -72,6 +73,7 @@ XColorToXRenderColor(XColor xcol, XRenderColor *rendcol) {
     rendcol->blue = xcol.blue;
     rendcol->alpha = 0xFFFF;
 }
+#endif
 
 #ifdef DZEN_XRESOURCES
 Boolean

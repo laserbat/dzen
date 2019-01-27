@@ -26,16 +26,16 @@ PKG = x11
 # Comment  : Add # to the beginning of the respective lines
 
 ## with XFT
-#PKG += xft
-#CFLAGS += -DDZEN_XFT
+PKG += xft xrender
+CFLAGS += -DDZEN_XFT
 
 ## with XPM
-#PKG += xpm
-#CFLAGS += -DDZEN_XPM
+PKG += xpm
+CFLAGS += -DDZEN_XPM
 
 ## with XINERAMA
-#PKG += xinerama
-#CFLAGS += -DDZEN_XINERAMA
+PKG += xinerama
+CFLAGS += -DDZEN_XINERAMA
 
 # END of feature configuration
 

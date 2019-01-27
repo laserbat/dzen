@@ -436,7 +436,6 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
         else {
             pm = XCreatePixmap(dzen.dpy, RootWindowOfScreen(dzen.screen), dzen.title_win.width,
                                dzen.line_height, DefaultDepthOfScreen(dzen.screen));
-            sens_areas_cnt = 0;
         }
 
 #ifdef DZEN_XFT
