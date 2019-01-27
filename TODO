@@ -7,7 +7,7 @@
 
           o XRandR support (MEDIUM PRIORITY)
           o cache XPM files in order to improve drawing
-            performace (HIGH PRIORITY, done in svn trunk)
+            performance (HIGH PRIORITY, done in svn trunk)
 
 
 #  extend available actions

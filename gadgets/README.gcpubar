@@ -3,7 +3,7 @@
 ====================================
 
 gcpubar is a CPU utilization meter for Linux. It relies on the existence
-of the "/proc/stat" file and generateѕ fully graphical meters viewable with
+of the "/proc/stat" file and generates fully graphical meters viewable with
 dzen >= 0.7.0.
 
 Command line options:
@@ -33,7 +33,7 @@ Command line options:
   -gw :  Width of the graph elements    (default: 1)
 
   -gs :  Space between the graph 
-         elemements                     (default: 0)
+         elements                       (default: 0)
 
   -nonl:  no new line, don't put
           '\n' at the end of the bar    (default: do print '\n')
