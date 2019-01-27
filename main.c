@@ -1186,7 +1186,7 @@ main(int argc, char *argv[]) {
                 "XPM "
 #endif
 #ifdef DZEN_XFT
-                "XFT"
+                "XFT "
 #endif
 #ifdef DZEN_XINERAMA
                 "XINERAMA "
