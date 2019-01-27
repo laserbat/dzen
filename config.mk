@@ -1,5 +1,5 @@
 # dzen version
-VERSION = 0.9.5-svn
+VERSION = 0.9.6-git
 
 # Customize below to fit your system
 
