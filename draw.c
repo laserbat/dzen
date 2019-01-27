@@ -731,30 +731,34 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 							font_was_set = 1;
 							break;
 						case ca:
-							if(lnr == -1) {
-								if(tval[0]) {
-									if(sens_areas_cnt < MAX_CLICKABLE_AREAS) {
-										get_sens_area(tval, 
-												&sens_areas[sens_areas_cnt].button, 
-												sens_areas[sens_areas_cnt].cmd);
-										sens_areas[sens_areas_cnt].start_x = px;
-										sens_areas[sens_areas_cnt].start_y = py;
-										sens_areas[sens_areas_cnt].end_y = py;
-										max_y = py;
-										sens_areas[sens_areas_cnt].window = LNR2WINDOW(lnr);
-										sens_areas[sens_areas_cnt].active = 0;
-										sens_areas_cnt++;
+							if(tval[0]) {
+								if(sens_areas_cnt < MAX_CLICKABLE_AREAS) {
+									get_sens_area(tval, 
+											&sens_areas[sens_areas_cnt].button, 
+											sens_areas[sens_areas_cnt].cmd);
+									sens_areas[sens_areas_cnt].start_x = px;
+									sens_areas[sens_areas_cnt].start_y = py;
+									sens_areas[sens_areas_cnt].end_y = py;
+									max_y = py;
+									sens_areas[sens_areas_cnt].topslave = LNR2WINDOW(lnr);
+									sens_areas[sens_areas_cnt].active = 0;
+									if(lnr == -1) {
+										sens_areas[sens_areas_cnt].win = dzen.title_win.win;
+									} else {
+										sens_areas[sens_areas_cnt].win = dzen.slave_win.line[lnr];
 									}
-								} else {
-										/* find most recent unclosed area */
-										for(i = sens_areas_cnt - 1; i >= 0; i--)
-											if(!sens_areas[i].active)
-												break;
-										if(i >= 0 && i < MAX_CLICKABLE_AREAS) {
-											sens_areas[i].end_x = px;
-											sens_areas[i].end_y = max_y;
-											sens_areas[i].active = 1;
-									}
+									sens_areas_cnt++;
+									
+								}
+							} else {
+									/* find most recent unclosed area */
+									for(i = sens_areas_cnt - 1; i >= 0; i--)
+										if(!sens_areas[i].active)
+											break;
+									if(i >= 0 && i < MAX_CLICKABLE_AREAS) {
+										sens_areas[i].end_x = px;
+										sens_areas[i].end_y = max_y;
+										sens_areas[i].active = 1;
 								}
 							}
 							break;
@@ -806,7 +810,7 @@ parse_line(const char *line, int lnr, int align, int reverse, int nodraw) {
 						    DefaultColormapOfScreen(dzen.screen),  xftcs,  &xftc);
 				}
 
-				XftDrawStringUtf8(xftd, &xftc, 
+				XftDrawStringUtf8(xftd, &xftc,
 						cur_fnt->xftfont, px, py + dzen.font.xftfont->ascent, (const FcChar8 *)lbuf, strlen(lbuf));
 
 #endif
